@@ -1,0 +1,23 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "patina"
+version = "1.0.0"
+description = "Offline nostalgic digicam/camcorder filter for photos and videos"
+requires-python = ">=3.9"
+dependencies = [
+    "Pillow>=9.1",
+    "numpy>=1.21",
+    "pillow-heif>=0.13",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=7"]
+
+[project.scripts]
+patina = "patina.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]

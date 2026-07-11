@@ -1,0 +1,17 @@
+# local product spec — not part of the repo
+patina.md
+
+# python
+__pycache__/
+*.pyc
+.venv/
+venv/
+*.egg-info/
+dist/
+build/
+.pytest_cache/
+
+# editors / OS
+.DS_Store
+.idea/
+.vscode/
