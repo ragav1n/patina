@@ -43,7 +43,7 @@ PRESETS: Dict[str, Dict[str, Any]] = {
         "description": "Y2K home-video still: washed low-saturation color, lifted "
                        "milky blacks, hazy highlight bloom, soft low-res detail.",
         "render_width": 960,
-        "reduce_scale": 0.6,
+        "reduce_scale": 0.72,
         "color": {"r_mult": 0.98, "g_mult": 1.03, "b_mult": 1.04,
                   "brightness": 1.04, "contrast": 0.92},
         "saturation": 0.68,
