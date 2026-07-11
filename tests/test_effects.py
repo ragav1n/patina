@@ -115,6 +115,61 @@ def test_scanlines_darken_spaced_rows():
     assert out[2].mean() == pytest.approx(200.0)
 
 
+def test_saturate_toward_gray():
+    arr = np.zeros((4, 4, 3), dtype=np.float32)
+    arr[..., 0] = 200.0  # pure red
+    out = effects.saturate(arr, 0.0)  # full desaturation -> luma everywhere
+    assert np.allclose(out[..., 0], out[..., 1])
+    assert np.allclose(out[..., 1], out[..., 2])
+    assert out[0, 0, 0] == pytest.approx(200 * 0.299, rel=0.01)
+
+
+def test_bloom_bleeds_highlights_into_neighbors():
+    arr = np.full((100, 100, 3), 60.0, dtype=np.float32)
+    arr[40:60, 40:60] = 255.0  # hot white square
+    out = effects.bloom(arr.copy(), threshold=168, radius_ratio=0.05, strength=0.6)
+    assert out[50, 35].mean() > 70.0  # glow reaches OUTSIDE the square
+    assert out[50, 5].mean() == pytest.approx(60.0, abs=1.0)  # far away untouched
+    dark = np.full((100, 100, 3), 60.0, dtype=np.float32)
+    assert effects.bloom(dark.copy(), 168, 0.05, 0.6).mean() == pytest.approx(60.0, abs=0.5)
+
+
+def test_fade_lifts_blacks_and_caps_whites():
+    arr = np.zeros((4, 4, 3), dtype=np.float32)
+    assert effects.fade(arr, black=22, white=238).mean() == pytest.approx(22.0)
+    arr = np.full((4, 4, 3), 255.0, dtype=np.float32)
+    assert effects.fade(arr, black=22, white=238).mean() == pytest.approx(238.0)
+
+
+def test_mono_grain_is_luma_only():
+    arr = np.full((32, 32, 3), 128.0, dtype=np.float32)
+    out = effects.add_grain(arr, 10, rng=np.random.default_rng(0), mono=True)
+    assert np.array_equal(out[..., 0], out[..., 1])  # same noise on every channel
+    assert np.array_equal(out[..., 1], out[..., 2])
+
+
+def test_render_width_processes_small_but_returns_original_size():
+    big = Image.new("RGB", (2000, 1500), (120, 120, 120))
+    out = effects.apply_preset(big, {"render_width": 500, "grain_sigma": 10})
+    assert out.size == (2000, 1500)
+    # Grain was added at 500px and upscaled: neighboring pixels correlate,
+    # so per-pixel noise variance is well below sigma at full resolution.
+    arr = np.asarray(out, dtype=np.float32)
+    assert 1.0 < arr.std() < 10.0
+    small = Image.new("RGB", (300, 200), (120, 120, 120))
+    assert effects.apply_preset(small, {"render_width": 500}).size == (300, 200)
+
+
+def test_y2k_camcorder_is_washed_and_soft(gradient_image):
+    src = _arr(gradient_image)
+    out = _arr(effects.apply_preset(gradient_image, PRESETS["y2k_camcorder"]))
+    assert out.min() > 5.0  # no true black anywhere: lifted floor
+    assert out.max() < 253.0  # no clipped white either
+    # Desaturated: per-pixel channel spread shrinks.
+    spread = lambda a: np.abs(a - a.mean(axis=-1, keepdims=True)).mean()
+    assert spread(out) < spread(src) * 0.85
+
+
 def test_flash_night_is_cool_and_dark(gradient_image):
     src = _arr(gradient_image)
     out = _arr(effects.apply_preset(gradient_image, PRESETS["flash_night"]))

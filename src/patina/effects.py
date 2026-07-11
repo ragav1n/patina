@@ -15,10 +15,13 @@ import functools
 from typing import Any, Mapping, Optional
 
 import numpy as np
-from PIL import Image
+from PIL import Image, ImageFilter
 
 # Falloff exponent for the vignette: higher = cleaner center, harder corner crush.
 _VIGNETTE_POWER = 2.5
+
+# Rec. 601 luma weights, used by saturation and bloom.
+_LUMA = np.array([0.299, 0.587, 0.114], dtype=np.float32)
 
 
 def apply_preset(
@@ -28,22 +31,41 @@ def apply_preset(
 ) -> Image.Image:
     """Run the pipeline steps defined by ``preset`` on ``img`` in the fixed order."""
     img = img.convert("RGB")
+    orig_size = img.size
+    if "render_width" in preset and img.width > preset["render_width"]:
+        # Work at a video-native resolution so softness, grain, and bloom look
+        # the same on a 12 MP photo as on a small frame; upscaled back at the end.
+        scale = preset["render_width"] / img.width
+        img = img.resize(
+            (preset["render_width"], max(1, round(img.height * scale))),
+            Image.Resampling.BILINEAR,
+        )
     if "reduce_scale" in preset:
         img = reduce_detail(img, preset["reduce_scale"])
     arr = np.asarray(img, dtype=np.float32)
     if "color" in preset:
         arr = color_grade(arr, **preset["color"])
+    if "saturation" in preset:
+        arr = saturate(arr, preset["saturation"])
     if "flash_hotspot" in preset:
         arr = flash_hotspot(arr, **preset["flash_hotspot"])
     if "vignette_strength" in preset:
         arr = vignette(arr, preset["vignette_strength"])
+    if "bloom" in preset:
+        arr = bloom(arr, **preset["bloom"])
+    if "fade" in preset:
+        arr = fade(arr, **preset["fade"])
     if "aberration_shift" in preset:
         arr = chromatic_aberration(arr, preset["aberration_shift"])
     if "grain_sigma" in preset:
-        arr = add_grain(arr, preset["grain_sigma"], rng=rng)
+        arr = add_grain(arr, preset["grain_sigma"], rng=rng,
+                        mono=preset.get("grain_mono", False))
     if "scanlines" in preset:
         arr = scanlines(arr, **preset["scanlines"])
-    return Image.fromarray(np.clip(arr, 0.0, 255.0).astype(np.uint8), "RGB")
+    out = Image.fromarray(np.clip(arr, 0.0, 255.0).astype(np.uint8), "RGB")
+    if out.size != orig_size:
+        out = out.resize(orig_size, Image.Resampling.BILINEAR)
+    return out
 
 
 def reduce_detail(img: Image.Image, scale: float) -> Image.Image:
@@ -142,13 +164,59 @@ def chromatic_aberration(arr: np.ndarray, shift: int) -> np.ndarray:
     return arr
 
 
-def add_grain(
-    arr: np.ndarray, sigma: float, rng: Optional[np.random.Generator] = None
+def saturate(arr: np.ndarray, amount: float) -> np.ndarray:
+    """Scale color away from (amount > 1) or toward (amount < 1) per-pixel luma."""
+    luma = arr @ _LUMA
+    arr *= np.float32(amount)
+    arr += (np.float32(1.0 - amount) * luma)[..., None]
+    return arr
+
+
+def bloom(
+    arr: np.ndarray, threshold: float, radius_ratio: float, strength: float
 ) -> np.ndarray:
-    """Gaussian pixel noise, fresh on every call so video grain moves per frame."""
+    """Halation: bright areas glow and bleed into their surroundings.
+
+    Luma above ``threshold`` is extracted, Gaussian-blurred, and screened back
+    toward white — blown skies melt outward, highlights haze over their edges.
+    """
+    w = arr.shape[1]
+    luma = arr @ _LUMA
+    highlights = np.clip(
+        (luma - threshold) / max(1.0, 255.0 - threshold), 0.0, 1.0
+    )
+    hl_img = Image.fromarray((highlights * 255.0).astype(np.uint8), "L")
+    radius = max(1.0, w * radius_ratio)
+    glow = np.asarray(
+        hl_img.filter(ImageFilter.GaussianBlur(radius)), dtype=np.float32
+    ) / 255.0
+    mask = np.clip(glow * np.float32(strength), 0.0, 1.0)
+    arr += (255.0 - arr) * mask[..., None]
+    return arr
+
+
+def fade(arr: np.ndarray, black: float, white: float) -> np.ndarray:
+    """Compress [0, 255] into [black, white]: lifted milky blacks, capped whites."""
+    arr *= np.float32((white - black) / 255.0)
+    arr += np.float32(black)
+    return arr
+
+
+def add_grain(
+    arr: np.ndarray,
+    sigma: float,
+    rng: Optional[np.random.Generator] = None,
+    mono: bool = False,
+) -> np.ndarray:
+    """Gaussian pixel noise, fresh on every call so video grain moves per frame.
+
+    ``mono`` applies the same noise to all three channels (luma-only grain,
+    video-tape-like) instead of independent per-channel chroma noise.
+    """
     if rng is None:
         rng = np.random.default_rng()
-    arr += rng.standard_normal(arr.shape, dtype=np.float32) * np.float32(sigma)
+    shape = arr.shape[:2] + ((1,) if mono else (3,))
+    arr += rng.standard_normal(shape, dtype=np.float32) * np.float32(sigma)
     return arr
 
 

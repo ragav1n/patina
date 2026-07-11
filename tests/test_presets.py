@@ -3,13 +3,14 @@ from __future__ import annotations
 from patina.presets import PRESETS
 
 RECOGNIZED_KEYS = {
-    "description", "reduce_scale", "color", "flash_hotspot",
-    "vignette_strength", "aberration_shift", "grain_sigma", "scanlines",
+    "description", "render_width", "reduce_scale", "color", "saturation",
+    "flash_hotspot", "vignette_strength", "bloom", "fade",
+    "aberration_shift", "grain_sigma", "grain_mono", "scanlines",
 }
 
 
-def test_two_presets_ship():
-    assert set(PRESETS) == {"flash_night", "camcorder_warm"}
+def test_shipping_presets():
+    assert set(PRESETS) == {"flash_night", "camcorder_warm", "y2k_camcorder"}
 
 
 def test_every_preset_has_a_description():
@@ -33,6 +34,10 @@ def test_sub_dicts_have_exact_parameter_names():
                 "cx_ratio", "cy_ratio", "radius_ratio", "strength"}
         if "scanlines" in preset:
             assert set(preset["scanlines"]) == {"spacing", "opacity"}
+        if "bloom" in preset:
+            assert set(preset["bloom"]) == {"threshold", "radius_ratio", "strength"}
+        if "fade" in preset:
+            assert set(preset["fade"]) == {"black", "white"}
 
 
 def test_signature_steps():
