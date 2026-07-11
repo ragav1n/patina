@@ -92,7 +92,7 @@ def sample_video_webm(tmp_path_factory):
         ["ffmpeg", "-y", "-nostdin", "-loglevel", "error",
          "-f", "lavfi", "-i", "testsrc2=duration=2:size=320x240:rate=12",
          "-f", "lavfi", "-i", "sine=frequency=440:duration=2",
-         "-c:v", "libvpx", "-c:a", "libvorbis", "-shortest", str(path)],
+         "-c:v", "libvpx", "-c:a", "libopus", "-shortest", str(path)],
         check=True,
     )
     return path
