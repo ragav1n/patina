@@ -224,6 +224,16 @@ def test_chroma_bleed_smears_color_not_luma():
     assert np.abs((out @ luma_w) - (arr @ luma_w)).mean() < 2.0
 
 
+def test_instant_frame_mounts_on_even_sized_paper():
+    img = Image.new("RGB", (100, 81), (40, 40, 40))
+    out = effects.instant_frame(img, thickness_ratio=0.07, bottom_ratio=0.24)
+    assert out.width == 114 and out.height == 108  # 107 rounded up to even
+    arr = _arr(out)
+    assert arr[0, 0].mean() > 230  # paper-white border
+    assert arr[-1, out.width // 2].mean() > 230  # thick bottom strip
+    assert arr[10, 10].mean() < 50  # the photo itself, inset by the border
+
+
 def test_jpeg_artifacts_keeps_size_and_alters_pixels(gradient_image):
     out = effects.jpeg_artifacts(gradient_image, quality=30)
     assert out.size == gradient_image.size
@@ -276,11 +286,13 @@ def test_digicam_2000s_is_sharpened_and_vivid(gradient_image):
     soft = _arr(effects.apply_preset(checker, reduce_only, rng=rng(0)))
     edge_energy = lambda a: np.abs(np.diff(a.mean(axis=-1), axis=1)).mean()
     assert edge_energy(out) > edge_energy(soft)
-    # Vivid: channel spread grows versus the source.
+    # Muted and dingy: color dials down and whites never reach paper white.
     src = _arr(gradient_image)
-    vivid = _arr(effects.apply_preset(gradient_image, PRESETS["digicam_2000s"]))
+    dim = _arr(effects.apply_preset(gradient_image, PRESETS["digicam_2000s"]))
     spread = lambda a: np.abs(a - a.mean(axis=-1, keepdims=True)).mean()
-    assert spread(vivid) > spread(src)
+    assert spread(dim) < spread(src)
+    luma = dim @ np.array([0.299, 0.587, 0.114], dtype=np.float32)
+    assert np.percentile(luma, 99) < 220.0
 
 
 def test_vhs_tape_is_washed_and_scanlined(gradient_image):
@@ -309,18 +321,26 @@ def test_lomo_xpro_is_saturated_with_dark_corners(gradient_image):
     assert out[:6, :6].mean() < src[:6, :6].mean() * 0.6  # heavy vignette
 
 
-def test_instant_film_is_warm_and_milky(gradient_image):
+def test_instant_film_is_warm_soft_and_framed(gradient_image):
     src = _arr(gradient_image)
-    out = _arr(effects.apply_preset(gradient_image, PRESETS["instant_film"]))
-    assert out.min() > 15.0  # milky lifted blacks
-    # Warm cream cast: red gains relative to blue versus the source.
+    out_img = effects.apply_preset(gradient_image, PRESETS["instant_film"])
+    # The paper border grows the canvas, with the tall strip at the bottom.
+    assert out_img.width > gradient_image.width
+    assert out_img.height - gradient_image.height > \
+        (out_img.width - gradient_image.width)
+    out = _arr(out_img)
+    # Warm cast: red gains relative to blue versus the source.
     assert out[..., 0].mean() / max(out[..., 2].mean(), 1) > \
         src[..., 0].mean() / src[..., 2].mean()
 
 
 def test_presets_visually_distinct(gradient_image):
+    # instant_frame grows the canvas; drop it so every output stays comparable
+    # pixel-for-pixel — this test is about the grade, not the border.
     outs = {
-        name: _arr(effects.apply_preset(gradient_image, preset))
+        name: _arr(effects.apply_preset(
+            gradient_image, {k: v for k, v in preset.items() if k != "instant_frame"}
+        ))
         for name, preset in PRESETS.items()
     }
     src = _arr(gradient_image)

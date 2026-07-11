@@ -26,6 +26,8 @@ that step):
     scanlines           dict    spacing (rows), opacity (0-255)
     jpeg_quality        int     re-encode at this JPEG quality for real block
                                 artifacts (applied at render resolution)
+    instant_frame       dict    thickness_ratio, bottom_ratio — mount on
+                                instant-print paper (grows the canvas)
 
 "description" is metadata shown by --list-presets only.
 """
@@ -67,27 +69,27 @@ PRESETS: Dict[str, Dict[str, Any]] = {
                        "color, hot center, dark corners, chunky film grain.",
         "render_width": 1280,
         "reduce_scale": 0.85,
-        "color": {"r_mult": 1.06, "g_mult": 1.01, "b_mult": 0.93,
-                  "brightness": 1.05, "contrast": 1.12},
-        "saturation": 1.15,
+        "color": {"r_mult": 1.02, "g_mult": 1.02, "b_mult": 0.94,
+                  "brightness": 1.00, "contrast": 1.22},
+        "saturation": 1.25,
         "flash_hotspot": {"cx_ratio": 0.5, "cy_ratio": 0.45,
-                          "radius_ratio": 0.60, "strength": 0.18},
-        "vignette_strength": 0.45,
+                          "radius_ratio": 0.60, "strength": 0.28},
+        "vignette_strength": 0.60,
         "bloom": {"threshold": 205, "radius_ratio": 0.015, "strength": 0.30},
         "grain_sigma": 9,
     },
     "digicam_2000s": {
-        "description": "Early-2000s compact digicam: oversharpened halo edges, vivid "
-                       "CCD color, purple fringing, blown flash whites, JPEG blocks.",
-        "render_width": 1280,
-        "reduce_scale": 0.80,
-        "sharpen": {"radius": 2.0, "amount": 1.6},
-        "color": {"r_mult": 0.99, "g_mult": 1.00, "b_mult": 1.04,
-                  "brightness": 1.06, "contrast": 1.12},
-        "saturation": 1.25,
-        "bloom": {"threshold": 215, "radius_ratio": 0.012, "strength": 0.50},
-        "aberration_shift": 2,
-        "grain_sigma": 4,
+        "description": "Early-2000s compact digicam indoors, no flash: dim muted "
+                       "color, murky shadows, dingy capped whites, soft mushy detail.",
+        "render_width": 1024,
+        "reduce_scale": 0.60,
+        "sharpen": {"radius": 1.5, "amount": 0.5},
+        "color": {"r_mult": 0.955, "g_mult": 1.02, "b_mult": 1.05,
+                  "brightness": 0.96, "contrast": 1.10},
+        "saturation": 0.82,
+        "fade": {"black": 18, "white": 208},
+        "aberration_shift": 1,
+        "grain_sigma": 5,
         "jpeg_quality": 68,
     },
     "vhs_tape": {
@@ -135,27 +137,29 @@ PRESETS: Dict[str, Dict[str, Any]] = {
         "grain_sigma": 7,
     },
     "instant_film": {
-        "description": "Instant film print: warm cream cast, milky lifted blacks, "
-                       "low contrast, soft glow, gentle grain.",
-        "reduce_scale": 0.80,
-        "color": {"r_mult": 1.06, "g_mult": 1.00, "b_mult": 0.92,
-                  "brightness": 1.06, "contrast": 0.82},
-        "saturation": 0.75,
+        "description": "Instant film print: white paper frame, warm soft image, "
+                       "capped whites, dreamy out-of-focus detail.",
+        "render_width": 960,
+        "reduce_scale": 0.50,
+        "color": {"r_mult": 1.09, "g_mult": 1.00, "b_mult": 0.95,
+                  "brightness": 1.00, "contrast": 1.02},
+        "saturation": 0.90,
         "vignette_strength": 0.12,
-        "bloom": {"threshold": 180, "radius_ratio": 0.02, "strength": 0.40},
-        "fade": {"black": 30, "white": 232},
-        "grain_sigma": 5,
+        "bloom": {"threshold": 200, "radius_ratio": 0.025, "strength": 0.35},
+        "fade": {"black": 16, "white": 210},
+        "grain_sigma": 4,
+        "instant_frame": {"thickness_ratio": 0.07, "bottom_ratio": 0.24},
     },
     "blurry_aesthetic": {
         "description": "Intentionally blurry night shot: out-of-focus softness, "
                        "handheld motion smear, lights melting into glow.",
         "render_width": 960,
-        "reduce_scale": 0.45,
-        "motion_blur": {"distance_ratio": 0.015, "angle": 20},
+        "reduce_scale": 0.50,
+        "motion_blur": {"distance_ratio": 0.028, "angle": 18},
         "color": {"r_mult": 1.02, "g_mult": 1.00, "b_mult": 1.00,
-                  "brightness": 0.98, "contrast": 1.06},
-        "saturation": 1.10,
-        "bloom": {"threshold": 170, "radius_ratio": 0.03, "strength": 0.70},
+                  "brightness": 0.94, "contrast": 1.12},
+        "saturation": 1.05,
+        "bloom": {"threshold": 165, "radius_ratio": 0.035, "strength": 0.75},
         "grain_sigma": 5,
     },
     "camcorder_warm": {

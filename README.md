@@ -10,32 +10,71 @@ Ten looks are built in:
 | `camcorder_warm` | photo of a camcorder's LCD: warm brown cast, milky blacks, faint scanlines |
 | `y2k_camcorder` | y2k home-video still: washed cool colors, lifted blacks, hazy highlight bloom, soft detail |
 | `disposable_flash` | cheap disposable film camera with the flash on: warm punchy color, hot center, dark corners, chunky grain |
-| `digicam_2000s` | early-2000s compact digicam: oversharpened edges, vivid color, purple fringing, JPEG blocks |
+| `digicam_2000s` | early-2000s compact digicam indoors, no flash: dim muted color, murky shadows, dingy whites, mushy detail |
 | `vhs_tape` | worn VHS tape: color bleeding past edges, washed contrast, scanlines, heavy tape noise |
 | `cctv` | surveillance camera: green-gray near-monochrome, crushed contrast, blooming lights, heavy noise |
 | `lomo_xpro` | cross-processed lomography: acid green-yellow cast, punchy saturation, heavy dark vignette |
-| `instant_film` | instant film print: warm cream cast, milky lifted blacks, low contrast, soft glow |
+| `instant_film` | instant film print: white paper frame, warm soft image, capped whites, dreamy out-of-focus detail |
 | `blurry_aesthetic` | intentionally blurry shot: out-of-focus softness, handheld motion smear, lights melting into glow |
 
 ## Install
 
-You need Python 3.9 or newer.
+### 1. You need Python 3.9 or newer
+
+Check what you have:
+
+```
+python3 --version        # Windows: py --version
+```
+
+If that prints 3.9 or higher, you're set. If it errors or prints something ancient:
+
+- macOS: `brew install python` (get Homebrew from [brew.sh](https://brew.sh) if you don't have it), or grab the installer from [python.org/downloads](https://www.python.org/downloads/)
+- Debian/Ubuntu: `sudo apt install python3 python3-pip python3-venv`
+- Windows: install from [python.org/downloads](https://www.python.org/downloads/) and tick **"Add Python to PATH"** during setup
+
+### 2. Get the code
 
 ```
 git clone https://github.com/ragav1n/patina.git
 cd patina
+```
+
+No git? Click **Code → Download ZIP** on the GitHub page, unzip it, and `cd` into the folder in a terminal.
+
+### 3. Install patina
+
+The easy way — [pipx](https://pipx.pypa.io) or [uv](https://docs.astral.sh/uv/) installs it as a normal command you can run from anywhere, no venv juggling:
+
+```
+pipx install .          # or: uv tool install .
+```
+
+Or the classic way, inside a virtual environment (you'll need to re-run the `activate` line whenever you open a new terminal):
+
+```
 python3 -m venv .venv
 source .venv/bin/activate        # Windows: .venv\Scripts\activate
 pip install .
 ```
 
-That gives you the `patina` command inside the venv. For videos you also need ffmpeg on your PATH:
+Either way, check it worked:
+
+```
+patina --list-presets
+```
+
+You should see the ten looks listed. That's it for photos.
+
+### 4. For videos only: ffmpeg
+
+Videos additionally need ffmpeg on your PATH; photos work without it.
 
 - macOS: `brew install ffmpeg`
 - Debian/Ubuntu: `sudo apt install ffmpeg`
 - Windows: `choco install ffmpeg` (or `winget install Gyan.FFmpeg`)
 
-Photos work without ffmpeg.
+Then reopen the terminal and check with `ffmpeg -version`.
 
 ## Use it
 
@@ -45,6 +84,12 @@ Point it at a photo, a video, or a folder of photos:
 patina IMG_7719.HEIC
 patina clip.mp4 --preset y2k_camcorder
 patina vacation/
+```
+
+Not sure which look you want? Run them all and pick by eye:
+
+```
+patina IMG_7719.HEIC -all
 ```
 
 Output lands next to the input as `<name>_<preset><ext>`, so `IMG_7719.HEIC` becomes `IMG_7719_flash_night.HEIC`. A folder becomes `vacation/nostalgia_<preset>/` with the same filenames inside.
@@ -100,14 +145,17 @@ Every look is a plain dict in `src/patina/presets.py`. Add an entry, and the CLI
 },
 ```
 
-Skip any key and that step is skipped. The engine always runs steps in the same order (resize, detail, sharpen, motion blur, color, saturation, chroma bleed, hotspot, vignette, bloom, fade, aberration, grain, scanlines, JPEG artifacts), so the dict order does not matter. The full key list with comments is at the top of `presets.py` — the newer steps (`sharpen`, `motion_blur`, `chroma_bleed`, `jpeg_quality`) all appear in the shipped presets if you want live examples.
+Skip any key and that step is skipped. The engine always runs steps in the same order (resize, detail, sharpen, motion blur, color, saturation, chroma bleed, hotspot, vignette, bloom, fade, aberration, grain, scanlines, JPEG artifacts, instant frame), so the dict order does not matter. The full key list with comments is at the top of `presets.py` — the newer steps (`sharpen`, `motion_blur`, `chroma_bleed`, `jpeg_quality`, `instant_frame`) all appear in the shipped presets if you want live examples.
 
 ## When something breaks
 
+- **`python3: command not found`**: Python isn't installed (or on Windows it's `py` instead of `python3`). See step 1 of the install section.
+- **`patina: command not found`**: with the venv install, run `source .venv/bin/activate` first — it's per-terminal. With pipx, run `pipx ensurepath` once and reopen the terminal.
 - **"ffmpeg and ffprobe not found on PATH"**: install ffmpeg (commands above) and reopen the terminal. Only video needs it.
 - **"HEIC support requires the pillow-heif package"**: `pip install pillow-heif`.
 - **"could not read video ... file may be corrupt"**: ffprobe gave up on the file; its actual error is in the parentheses.
 - **Grain looks weaker in JPEG output**: JPEG compression smooths noise. patina saves JPEGs at quality 92, or write a PNG with `-o out.png` to keep every speck.
+- **Changed the code but the global command behaves the same**: `pipx`/`uv tool` installs are a snapshot — reinstall with `pipx reinstall patina` or `uv tool install --reinstall .`
 
 ## Hacking on it
 

@@ -6,7 +6,7 @@ RECOGNIZED_KEYS = {
     "description", "render_width", "reduce_scale", "sharpen", "motion_blur",
     "color", "saturation", "chroma_bleed", "flash_hotspot",
     "vignette_strength", "bloom", "fade", "aberration_shift", "grain_sigma",
-    "grain_mono", "scanlines", "jpeg_quality",
+    "grain_mono", "scanlines", "jpeg_quality", "instant_frame",
 }
 
 
@@ -49,6 +49,8 @@ def test_sub_dicts_have_exact_parameter_names():
             assert set(preset["chroma_bleed"]) == {"radius_ratio"}
         if "motion_blur" in preset:
             assert set(preset["motion_blur"]) == {"distance_ratio", "angle"}
+        if "instant_frame" in preset:
+            assert set(preset["instant_frame"]) == {"thickness_ratio", "bottom_ratio"}
 
 
 def test_signature_steps():
@@ -64,6 +66,7 @@ def test_signature_steps():
     assert "scanlines" in PRESETS["vhs_tape"]
     assert PRESETS["cctv"]["saturation"] <= 0.3  # heavily desaturated
     assert PRESETS["lomo_xpro"]["vignette_strength"] >= 0.6
-    assert "fade" in PRESETS["instant_film"]  # milky lifted blacks
+    assert "fade" in PRESETS["instant_film"]  # capped instant-print whites
+    assert "instant_frame" in PRESETS["instant_film"]  # the paper border
     assert "motion_blur" in PRESETS["blurry_aesthetic"]
     assert "sharpen" not in PRESETS["blurry_aesthetic"]

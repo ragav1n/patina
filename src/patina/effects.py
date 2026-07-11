@@ -76,6 +76,8 @@ def apply_preset(
         out = jpeg_artifacts(out, preset["jpeg_quality"])
     if out.size != orig_size:
         out = out.resize(orig_size, Image.Resampling.BILINEAR)
+    if "instant_frame" in preset:
+        out = instant_frame(out, **preset["instant_frame"])
     return out
 
 
@@ -142,6 +144,26 @@ def chroma_bleed(arr: np.ndarray, radius_ratio: float) -> np.ndarray:
         )
         arr[..., c] = luma + (blurred - 128.0) * 2.0
     return arr
+
+
+def instant_frame(
+    img: Image.Image, thickness_ratio: float, bottom_ratio: float
+) -> Image.Image:
+    """Mount the image on instant-print paper: white border, thick bottom.
+
+    Runs after the upscale back to the original size, so it grows the canvas.
+    Dimensions are rounded up to even numbers to keep video encoders happy.
+    """
+    w, h = img.size
+    side = round(w * thickness_ratio)
+    bottom = round(h * bottom_ratio)
+    canvas_w = w + 2 * side
+    canvas_h = h + side + bottom
+    canvas_w += canvas_w % 2
+    canvas_h += canvas_h % 2
+    paper = Image.new("RGB", (canvas_w, canvas_h), (247, 244, 236))
+    paper.paste(img, (side, side))
+    return paper
 
 
 def jpeg_artifacts(img: Image.Image, quality: int) -> Image.Image:
