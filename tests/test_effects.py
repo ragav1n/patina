@@ -232,6 +232,27 @@ def test_jpeg_artifacts_keeps_size_and_alters_pixels(gradient_image):
     assert 0.1 < diff.mean() < 20.0  # visibly touched, not destroyed
 
 
+def test_motion_blur_smears_along_the_angle():
+    arr = np.zeros((30, 60, 3), dtype=np.float32)
+    arr[:, 30, :] = 255.0  # vertical white line
+    out = effects.motion_blur(arr.copy(), distance_ratio=0.1, angle=0)
+    # Horizontal smear spreads the line sideways without losing energy.
+    assert out[15, 28].mean() > 20.0 and out[15, 32].mean() > 20.0
+    assert out.sum() == pytest.approx(arr.sum(), rel=0.02)
+    # At 90 degrees the smear runs down the line instead: columns stay clean.
+    vertical = effects.motion_blur(arr.copy(), distance_ratio=0.1, angle=90)
+    assert vertical[15, 28].mean() == pytest.approx(0.0, abs=1.0)
+
+
+def test_blurry_aesthetic_is_much_softer_than_source(gradient_image):
+    # A checkerboard has maximal fine detail; the preset should flatten it.
+    checker = Image.fromarray(
+        (np.indices((120, 160)).sum(axis=0) % 2 * 255).astype(np.uint8)
+    ).convert("RGB")
+    out = _arr(effects.apply_preset(checker, PRESETS["blurry_aesthetic"]))
+    assert out.std() < _arr(checker).std() * 0.4
+
+
 def test_disposable_flash_is_warm_punchy_and_vignetted(gradient_image):
     src = _arr(gradient_image)
     out = _arr(effects.apply_preset(gradient_image, PRESETS["disposable_flash"]))
@@ -243,18 +264,23 @@ def test_disposable_flash_is_warm_punchy_and_vignetted(gradient_image):
 
 
 def test_digicam_2000s_is_sharpened_and_vivid(gradient_image):
-    out = _arr(effects.apply_preset(gradient_image, PRESETS["digicam_2000s"]))
+    # Real detail (a checkerboard), identical grain: only the unsharp mask
+    # differs between the two runs.
+    checker = Image.fromarray(
+        (np.indices((60, 80)).sum(axis=0) % 8 // 4 * 200 + 30).astype(np.uint8)
+    ).convert("RGB")
+    rng = np.random.default_rng
+    out = _arr(effects.apply_preset(checker, PRESETS["digicam_2000s"], rng=rng(0)))
     reduce_only = dict(PRESETS["digicam_2000s"])
     del reduce_only["sharpen"]
-    soft = _arr(effects.apply_preset(gradient_image, reduce_only))
-    # The unsharp mask leaves stronger local gradients than the same
-    # pipeline without it.
+    soft = _arr(effects.apply_preset(checker, reduce_only, rng=rng(0)))
     edge_energy = lambda a: np.abs(np.diff(a.mean(axis=-1), axis=1)).mean()
     assert edge_energy(out) > edge_energy(soft)
     # Vivid: channel spread grows versus the source.
     src = _arr(gradient_image)
+    vivid = _arr(effects.apply_preset(gradient_image, PRESETS["digicam_2000s"]))
     spread = lambda a: np.abs(a - a.mean(axis=-1, keepdims=True)).mean()
-    assert spread(out) > spread(src)
+    assert spread(vivid) > spread(src)
 
 
 def test_vhs_tape_is_washed_and_scanlined(gradient_image):
@@ -266,9 +292,11 @@ def test_vhs_tape_is_washed_and_scanlined(gradient_image):
 
 
 def test_cctv_is_near_monochrome_and_green(gradient_image):
+    src = _arr(gradient_image)
     out = _arr(effects.apply_preset(gradient_image, PRESETS["cctv"]))
-    spread = np.abs(out - out.mean(axis=-1, keepdims=True)).mean()
-    assert spread < 8.0  # saturation 0.12 leaves almost no color
+    spread = lambda a: np.abs(a - a.mean(axis=-1, keepdims=True)).mean()
+    # Most of the source color collapses; the remainder is the green tint.
+    assert spread(out) < spread(src) * 0.4
     assert out[..., 1].mean() > out[..., 0].mean()  # green-leaning
     assert out[..., 1].mean() > out[..., 2].mean()
 

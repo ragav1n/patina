@@ -3,10 +3,10 @@ from __future__ import annotations
 from patina.presets import PRESETS
 
 RECOGNIZED_KEYS = {
-    "description", "render_width", "reduce_scale", "sharpen", "color",
-    "saturation", "chroma_bleed", "flash_hotspot", "vignette_strength",
-    "bloom", "fade", "aberration_shift", "grain_sigma", "grain_mono",
-    "scanlines", "jpeg_quality",
+    "description", "render_width", "reduce_scale", "sharpen", "motion_blur",
+    "color", "saturation", "chroma_bleed", "flash_hotspot",
+    "vignette_strength", "bloom", "fade", "aberration_shift", "grain_sigma",
+    "grain_mono", "scanlines", "jpeg_quality",
 }
 
 
@@ -14,7 +14,7 @@ def test_shipping_presets():
     assert set(PRESETS) == {
         "flash_night", "camcorder_warm", "y2k_camcorder",
         "disposable_flash", "digicam_2000s", "vhs_tape",
-        "cctv", "lomo_xpro", "instant_film",
+        "cctv", "lomo_xpro", "instant_film", "blurry_aesthetic",
     }
 
 
@@ -47,6 +47,8 @@ def test_sub_dicts_have_exact_parameter_names():
             assert set(preset["sharpen"]) == {"radius", "amount"}
         if "chroma_bleed" in preset:
             assert set(preset["chroma_bleed"]) == {"radius_ratio"}
+        if "motion_blur" in preset:
+            assert set(preset["motion_blur"]) == {"distance_ratio", "angle"}
 
 
 def test_signature_steps():
@@ -60,6 +62,8 @@ def test_signature_steps():
     assert "jpeg_quality" in PRESETS["digicam_2000s"]
     assert "chroma_bleed" in PRESETS["vhs_tape"]
     assert "scanlines" in PRESETS["vhs_tape"]
-    assert PRESETS["cctv"]["saturation"] < 0.3  # near-monochrome
+    assert PRESETS["cctv"]["saturation"] <= 0.3  # heavily desaturated
     assert PRESETS["lomo_xpro"]["vignette_strength"] >= 0.6
     assert "fade" in PRESETS["instant_film"]  # milky lifted blacks
+    assert "motion_blur" in PRESETS["blurry_aesthetic"]
+    assert "sharpen" not in PRESETS["blurry_aesthetic"]

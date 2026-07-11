@@ -8,6 +8,8 @@ that step):
     reduce_scale        float   downsample/upsample factor (small-sensor softness)
     sharpen             dict    radius, amount — unsharp mask with halos
                                 (eager in-camera digicam sharpening)
+    motion_blur         dict    distance_ratio, angle — directional smear
+                                (camera shake during a slow exposure)
     color               dict    r_mult, g_mult, b_mult, brightness, contrast
     saturation          float   1 = unchanged, 0 = grayscale
     chroma_bleed        dict    radius_ratio — color smears past luma edges
@@ -99,7 +101,7 @@ PRESETS: Dict[str, Dict[str, Any]] = {
         "chroma_bleed": {"radius_ratio": 0.012},
         "fade": {"black": 24, "white": 235},
         "aberration_shift": 2,
-        "grain_sigma": 10,
+        "grain_sigma": 9,
         "grain_mono": True,
         "scanlines": {"spacing": 3, "opacity": 40},
     },
@@ -108,9 +110,11 @@ PRESETS: Dict[str, Dict[str, Any]] = {
                        "contrast, blooming lights, heavy noise, scanlines.",
         "render_width": 640,
         "reduce_scale": 0.60,
-        "color": {"r_mult": 0.96, "g_mult": 1.08, "b_mult": 0.98,
+        # The strong green cast is mostly cancelled by the desaturation that
+        # follows it — these gains are sized so ~30% survives as the tint.
+        "color": {"r_mult": 0.82, "g_mult": 1.22, "b_mult": 0.88,
                   "brightness": 1.05, "contrast": 1.25},
-        "saturation": 0.12,
+        "saturation": 0.30,
         "vignette_strength": 0.25,
         "bloom": {"threshold": 190, "radius_ratio": 0.018, "strength": 0.50},
         "grain_sigma": 14,
@@ -121,9 +125,11 @@ PRESETS: Dict[str, Dict[str, Any]] = {
         "description": "Lomography cross-process: oversaturated punchy color with a "
                        "warm-green tilt, deep blacks, heavy dark vignette.",
         "reduce_scale": 0.90,
-        "color": {"r_mult": 1.05, "g_mult": 1.03, "b_mult": 0.90,
-                  "brightness": 1.02, "contrast": 1.30},
-        "saturation": 1.45,
+        # Saturation runs after the grade and amplifies the cast with it, so
+        # the tilt stays modest here to land green-yellow, not orange.
+        "color": {"r_mult": 0.98, "g_mult": 1.10, "b_mult": 0.93,
+                  "brightness": 1.02, "contrast": 1.28},
+        "saturation": 1.35,
         "vignette_strength": 0.80,
         "aberration_shift": 2,
         "grain_sigma": 7,
@@ -132,12 +138,24 @@ PRESETS: Dict[str, Dict[str, Any]] = {
         "description": "Instant film print: warm cream cast, milky lifted blacks, "
                        "low contrast, soft glow, gentle grain.",
         "reduce_scale": 0.80,
-        "color": {"r_mult": 1.08, "g_mult": 1.00, "b_mult": 0.88,
+        "color": {"r_mult": 1.06, "g_mult": 1.00, "b_mult": 0.92,
                   "brightness": 1.06, "contrast": 0.82},
         "saturation": 0.75,
         "vignette_strength": 0.12,
         "bloom": {"threshold": 180, "radius_ratio": 0.02, "strength": 0.40},
         "fade": {"black": 30, "white": 232},
+        "grain_sigma": 5,
+    },
+    "blurry_aesthetic": {
+        "description": "Intentionally blurry night shot: out-of-focus softness, "
+                       "handheld motion smear, lights melting into glow.",
+        "render_width": 960,
+        "reduce_scale": 0.45,
+        "motion_blur": {"distance_ratio": 0.015, "angle": 20},
+        "color": {"r_mult": 1.02, "g_mult": 1.00, "b_mult": 1.00,
+                  "brightness": 0.98, "contrast": 1.06},
+        "saturation": 1.10,
+        "bloom": {"threshold": 170, "radius_ratio": 0.03, "strength": 0.70},
         "grain_sigma": 5,
     },
     "camcorder_warm": {

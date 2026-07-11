@@ -46,6 +46,8 @@ def apply_preset(
     if "sharpen" in preset:
         img = sharpen(img, **preset["sharpen"])
     arr = np.asarray(img, dtype=np.float32)
+    if "motion_blur" in preset:
+        arr = motion_blur(arr, **preset["motion_blur"])
     if "color" in preset:
         arr = color_grade(arr, **preset["color"])
     if "saturation" in preset:
@@ -96,6 +98,26 @@ def sharpen(img: Image.Image, radius: float, amount: float) -> Image.Image:
     return img.filter(
         ImageFilter.UnsharpMask(radius=radius, percent=int(amount * 100), threshold=2)
     )
+
+
+def motion_blur(arr: np.ndarray, distance_ratio: float, angle: float) -> np.ndarray:
+    """Directional smear, like camera shake during a slow exposure.
+
+    Averages the frame along a line ``distance_ratio * width`` long at
+    ``angle`` degrees (0 = horizontal), centered so the image doesn't drift.
+    """
+    h, w = arr.shape[:2]
+    n = max(2, round(w * distance_ratio))
+    theta = np.deg2rad(angle)
+    dx, dy = np.cos(theta), np.sin(theta)
+    pad = n
+    padded = np.pad(arr, ((pad, pad), (pad, pad), (0, 0)), mode="edge")
+    acc = np.zeros_like(arr)
+    for t in range(n):
+        c = t - n // 2  # centered offsets
+        ox, oy = pad + round(c * dx), pad + round(c * dy)
+        acc += padded[oy : oy + h, ox : ox + w]
+    return acc / np.float32(n)
 
 
 def chroma_bleed(arr: np.ndarray, radius_ratio: float) -> np.ndarray:

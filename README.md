@@ -2,13 +2,20 @@
 
 A small CLI tool I use to make my photos and videos look like they came off an old digicam or camcorder. Everything runs on your own machine: no uploads, no accounts, nothing phones home.
 
-Three looks are built in:
+Ten looks are built in:
 
 | Preset | What you get |
 |---|---|
 | `flash_night` | harsh flash photo at night: cool blue cast, bright center, near-black corners, heavy grain |
 | `camcorder_warm` | photo of a camcorder's LCD: warm brown cast, milky blacks, faint scanlines |
-| `y2k_camcorder` | y2k home-video still: washed colors, lifted blacks, hazy highlight bloom, soft detail |
+| `y2k_camcorder` | y2k home-video still: washed cool colors, lifted blacks, hazy highlight bloom, soft detail |
+| `disposable_flash` | cheap disposable film camera with the flash on: warm punchy color, hot center, dark corners, chunky grain |
+| `digicam_2000s` | early-2000s compact digicam: oversharpened edges, vivid color, purple fringing, JPEG blocks |
+| `vhs_tape` | worn VHS tape: color bleeding past edges, washed contrast, scanlines, heavy tape noise |
+| `cctv` | surveillance camera: green-gray near-monochrome, crushed contrast, blooming lights, heavy noise |
+| `lomo_xpro` | cross-processed lomography: acid green-yellow cast, punchy saturation, heavy dark vignette |
+| `instant_film` | instant film print: warm cream cast, milky lifted blacks, low contrast, soft glow |
+| `blurry_aesthetic` | intentionally blurry shot: out-of-focus softness, handheld motion smear, lights melting into glow |
 
 ## Install
 
@@ -49,6 +56,8 @@ Every flag, with an example:
 ```
 patina photo.jpg                            # default preset (flash_night)
 patina photo.jpg --preset y2k_camcorder     # pick a look
+patina photo.jpg -all                       # every look at once: photo_<preset>.jpg each
+patina photo.jpg -all -o looks/             # same, but collected into a folder
 patina photo.jpg -o retro.png               # choose output path; extension picks the format
 patina photo.jpg --timestamp                # amber corner timestamp, current date/time
 patina photo.jpg --timestamp "26/02/'23  02:52"    # or your own text
@@ -91,7 +100,7 @@ Every look is a plain dict in `src/patina/presets.py`. Add an entry, and the CLI
 },
 ```
 
-Skip any key and that step is skipped. The engine always runs steps in the same order (resize, detail, color, saturation, hotspot, vignette, bloom, fade, aberration, grain, scanlines), so the dict order does not matter.
+Skip any key and that step is skipped. The engine always runs steps in the same order (resize, detail, sharpen, motion blur, color, saturation, chroma bleed, hotspot, vignette, bloom, fade, aberration, grain, scanlines, JPEG artifacts), so the dict order does not matter. The full key list with comments is at the top of `presets.py` — the newer steps (`sharpen`, `motion_blur`, `chroma_bleed`, `jpeg_quality`) all appear in the shipped presets if you want live examples.
 
 ## When something breaks
 
