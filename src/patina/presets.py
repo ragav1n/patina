@@ -40,16 +40,16 @@ PRESETS: Dict[str, Dict[str, Any]] = {
         "grain_sigma": 13,
     },
     "y2k_camcorder": {
-        "description": "Y2K home-video still: washed low-saturation color, lifted "
+        "description": "Y2K home-video still: washed cool-cast color, lifted "
                        "milky blacks, hazy highlight bloom, soft low-res detail.",
         "render_width": 960,
         "reduce_scale": 0.72,
-        "color": {"r_mult": 0.98, "g_mult": 1.03, "b_mult": 1.04,
-                  "brightness": 1.04, "contrast": 0.92},
+        "color": {"r_mult": 0.88, "g_mult": 1.05, "b_mult": 1.24,
+                  "brightness": 1.02, "contrast": 1.10},
         "saturation": 0.85,
         "vignette_strength": 0.16,
         "bloom": {"threshold": 168, "radius_ratio": 0.02, "strength": 0.55},
-        "fade": {"black": 22, "white": 238},
+        "fade": {"black": 32, "white": 240},
         "aberration_shift": 1,
         "grain_sigma": 6,
         "grain_mono": True,

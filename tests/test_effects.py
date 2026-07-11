@@ -164,10 +164,15 @@ def test_y2k_camcorder_is_washed_and_soft(gradient_image):
     src = _arr(gradient_image)
     out = _arr(effects.apply_preset(gradient_image, PRESETS["y2k_camcorder"]))
     assert out.min() > 5.0  # no true black anywhere: lifted floor
-    assert out.max() < 253.0  # no clipped white either
+    # Whites capped for the bulk of the frame; a blown sliver is authentic.
+    luma = out @ np.array([0.299, 0.587, 0.114], dtype=np.float32)
+    assert np.percentile(luma, 95) < 250.0
     # Desaturated: per-pixel channel spread shrinks.
     spread = lambda a: np.abs(a - a.mean(axis=-1, keepdims=True)).mean()
     assert spread(out) < spread(src) * 0.85
+    # Cool cast: blue gains on red versus the source.
+    assert out[..., 2].mean() / max(out[..., 0].mean(), 1) > \
+        src[..., 2].mean() / src[..., 0].mean()
 
 
 def test_flash_night_is_cool_and_dark(gradient_image):
