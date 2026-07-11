@@ -46,7 +46,7 @@ PRESETS: Dict[str, Dict[str, Any]] = {
         "reduce_scale": 0.72,
         "color": {"r_mult": 0.98, "g_mult": 1.03, "b_mult": 1.04,
                   "brightness": 1.04, "contrast": 0.92},
-        "saturation": 0.68,
+        "saturation": 0.85,
         "vignette_strength": 0.16,
         "bloom": {"threshold": 168, "radius_ratio": 0.02, "strength": 0.55},
         "fade": {"black": 22, "white": 238},
