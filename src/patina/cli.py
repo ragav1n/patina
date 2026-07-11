@@ -15,6 +15,8 @@ from patina.render import RenderOptions
 # Sentinel for "--timestamp given with no text": stamp the current date/time.
 _TS_NOW = object()
 
+_DEFAULT_PRESET = "flash_night"
+
 _DESCRIPTION = (
     "Apply a nostalgic digicam/camcorder look to photos and videos. "
     "Runs fully offline."
@@ -30,6 +32,8 @@ examples:
   patina photo.heic --preset camcorder_warm warm camcorder look, HEIC in and out
   patina vacation/                          every image -> vacation/nostalgia_flash_night/
   patina photo.jpg -o retro.png             pick the output path (and format)
+  patina photo.jpg -all                     every look at once -> photo_<preset>.jpg
+                                            each (works for videos too, just slower)
   patina photo.jpg --timestamp              stamp the current date/time
   patina photo.jpg --timestamp "26/02/'23  02:52"
                                             stamp custom text (keep flag after the file)
@@ -57,8 +61,12 @@ def build_parser() -> argparse.ArgumentParser:
              "default: <name>_<preset><ext> next to the input",
     )
     parser.add_argument(
-        "--preset", choices=sorted(PRESETS), default="flash_night",
-        help="which look to apply (default: %(default)s)",
+        "--preset", choices=sorted(PRESETS), default=None,
+        help=f"which look to apply (default: {_DEFAULT_PRESET})",
+    )
+    parser.add_argument(
+        "-all", "--all", dest="all_presets", action="store_true",
+        help="apply every preset; each output gets its usual _<preset> suffix",
     )
     parser.add_argument(
         "--timestamp", nargs="?", const=_TS_NOW, default=None, metavar="TEXT",
@@ -96,6 +104,43 @@ def _note(msg: str) -> None:
     print(f"note: {msg}", file=sys.stderr)
 
 
+def _process_one(
+    path: Path, out: Optional[Path], args: argparse.Namespace,
+    options: RenderOptions, multi: bool, show_notes: bool,
+) -> None:
+    """Run one preset over the input; ``multi`` = part of an -all sweep
+    (``show_notes`` silences the one-time flag warnings on repeat passes)."""
+    suffix = path.suffix.lower()
+    if path.is_dir() or suffix in image_io.IMAGE_EXTENSIONS:
+        if args.max_width is not None and show_notes:
+            _note("--max-width applies to video only; ignoring")
+        if path.is_dir():
+            # In an -all sweep a single -o directory would collide across
+            # presets; give each preset its own subdirectory.
+            out_dir = out / options.preset if (multi and out) else out
+            written = image_io.process_directory(path, out_dir, options)
+            print(f"wrote {len(written)} images to {written[0].parent}")
+        else:
+            print(f"wrote {image_io.process_image(path, out, options)}")
+    elif suffix in video.VIDEO_EXTENSIONS:
+        if args.frame_counter is not None and show_notes:
+            _note("--frame-counter applies to images only; ignoring")
+        if args.rec_counter != "00:00:06" and show_notes:
+            _note("--rec-counter applies to images only; video computes its own counter")
+        # process_video can't write into a bare directory itself.
+        out_file = (
+            out / video.default_output_path(path, options.preset).name
+            if (multi and out) else out
+        )
+        print(f"wrote {video.process_video(path, out_file, options)}")
+    else:
+        raise PatinaError(
+            f"unsupported file type '{path.suffix or path.name}' — supported "
+            f"images: {' '.join(sorted(image_io.IMAGE_EXTENSIONS))}; "
+            f"videos: {' '.join(sorted(video.VIDEO_EXTENSIONS))}"
+        )
+
+
 def _dispatch(args: argparse.Namespace) -> None:
     path = Path(args.input)
     if not path.exists():
@@ -106,35 +151,29 @@ def _dispatch(args: argparse.Namespace) -> None:
         if args.timestamp is _TS_NOW
         else args.timestamp
     )
-    options = RenderOptions(
-        preset=args.preset,
-        timestamp_text=timestamp_text,
-        rec=args.rec,
-        rec_counter=args.rec_counter,
-        frame_counter=args.frame_counter,
-        max_width=args.max_width,
-    )
-    suffix = path.suffix.lower()
-    if path.is_dir() or suffix in image_io.IMAGE_EXTENSIONS:
-        if args.max_width is not None:
-            _note("--max-width applies to video only; ignoring")
-        if path.is_dir():
-            written = image_io.process_directory(path, out, options)
-            print(f"wrote {len(written)} images to {written[0].parent}")
-        else:
-            print(f"wrote {image_io.process_image(path, out, options)}")
-    elif suffix in video.VIDEO_EXTENSIONS:
-        if args.frame_counter is not None:
-            _note("--frame-counter applies to images only; ignoring")
-        if args.rec_counter != "00:00:06":
-            _note("--rec-counter applies to images only; video computes its own counter")
-        print(f"wrote {video.process_video(path, out, options)}")
+    if args.all_presets:
+        if args.preset is not None:
+            _note(f"--preset {args.preset} is ignored with -all (every preset runs)")
+        if out is not None and not path.is_dir():
+            # One fixed path can't hold every preset's output — fill it as a
+            # directory of <name>_<preset><ext> files instead.
+            out.mkdir(parents=True, exist_ok=True)
+        names = sorted(PRESETS)
     else:
-        raise PatinaError(
-            f"unsupported file type '{path.suffix or path.name}' — supported "
-            f"images: {' '.join(sorted(image_io.IMAGE_EXTENSIONS))}; "
-            f"videos: {' '.join(sorted(video.VIDEO_EXTENSIONS))}"
+        names = [args.preset or _DEFAULT_PRESET]
+    for i, name in enumerate(names):
+        if args.all_presets:
+            print(f"[{i + 1}/{len(names)}] {name}")
+        options = RenderOptions(
+            preset=name,
+            timestamp_text=timestamp_text,
+            rec=args.rec,
+            rec_counter=args.rec_counter,
+            frame_counter=args.frame_counter,
+            max_width=args.max_width,
         )
+        _process_one(path, out, args, options,
+                     multi=args.all_presets, show_notes=i == 0)
 
 
 def main(argv: Optional[Sequence[str]] = None) -> int:

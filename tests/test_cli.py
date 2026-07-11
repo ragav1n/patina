@@ -105,6 +105,46 @@ def test_max_width_on_image_warns_but_succeeds(jpg_path):
     assert "note: --max-width" in proc.stderr
 
 
+def test_all_flag_writes_every_preset(jpg_path):
+    proc = run_cli(str(jpg_path), "-all")
+    assert proc.returncode == 0, proc.stderr
+    for name in PRESETS:
+        assert (jpg_path.parent / f"photo_{name}.jpg").exists(), name
+
+
+def test_all_flag_double_dash_spelling(jpg_path):
+    assert run_cli(str(jpg_path), "--all").returncode == 0
+
+
+def test_all_flag_ignores_preset_with_note(jpg_path):
+    proc = run_cli(str(jpg_path), "-all", "--preset", "cctv")
+    assert proc.returncode == 0, proc.stderr
+    assert "note: --preset cctv is ignored" in proc.stderr
+    for name in PRESETS:
+        assert (jpg_path.parent / f"photo_{name}.jpg").exists(), name
+
+
+def test_all_flag_with_output_directory(jpg_path, tmp_path):
+    target = tmp_path / "looks"
+    proc = run_cli(str(jpg_path), "-all", "-o", str(target))
+    assert proc.returncode == 0, proc.stderr
+    assert sorted(p.name for p in target.iterdir()) == sorted(
+        f"photo_{name}.jpg" for name in PRESETS
+    )
+
+
+def test_all_flag_on_folder_uses_preset_subdirs(tmp_path):
+    src = tmp_path / "pics"
+    src.mkdir()
+    Image.fromarray(gradient_array(), "RGB").save(src / "a.jpg")
+    out = tmp_path / "batch_out"
+    proc = run_cli(str(src), "-all", "-o", str(out))
+    assert proc.returncode == 0, proc.stderr
+    assert sorted(p.name for p in out.iterdir()) == sorted(PRESETS)
+    for name in PRESETS:
+        assert (out / name / "a.jpg").exists(), name
+
+
 def test_new_preset_needs_only_config(monkeypatch, jpg_path, capsys):
     """Acceptance criterion: a new look = one presets.py entry, nothing else."""
     monkeypatch.setitem(PRESETS, "test_sepia", {

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import numpy as np
 import pytest
-from PIL import Image
+from PIL import Image, ImageFilter
 
 from patina import effects
 from patina.presets import PRESETS
@@ -200,10 +200,106 @@ def test_camcorder_warm_is_warm_and_milky():
         src[..., 0].mean() / src[..., 2].mean()
 
 
-def test_presets_visually_distinct(gradient_image):
-    a = _arr(effects.apply_preset(gradient_image, PRESETS["flash_night"]))
-    b = _arr(effects.apply_preset(gradient_image, PRESETS["camcorder_warm"]))
+def test_sharpen_raises_edge_contrast():
+    # A blurred step edge regains slope (with overshoot) after sharpening.
+    arr = np.zeros((40, 40, 3), dtype=np.uint8)
+    arr[:, 20:] = 200
+    soft = Image.fromarray(arr, "RGB").filter(ImageFilter.GaussianBlur(2))
+    sharp = effects.sharpen(soft, radius=2.0, amount=1.6)
+    grad = lambda img: np.abs(np.diff(_arr(img)[20, :, 0])).max()
+    assert grad(sharp) > grad(soft) * 1.3
+
+
+def test_chroma_bleed_smears_color_not_luma():
+    # A saturated red/green boundary at constant luma: color should smear
+    # across it while a pure-luma edge stays put.
+    arr = np.zeros((40, 80, 3), dtype=np.float32)
+    arr[:, :40, 0] = 150.0  # red left half
+    arr[:, 40:, 1] = 150.0  # green right half
+    out = effects.chroma_bleed(arr.copy(), radius_ratio=0.05)
+    # Red now reaches past the boundary into the green half.
+    assert out[20, 44, 0] > arr[20, 44, 0] + 10
+    # Luma is preserved (bleed redistributes color, not brightness).
+    luma_w = np.array([0.299, 0.587, 0.114], dtype=np.float32)
+    assert np.abs((out @ luma_w) - (arr @ luma_w)).mean() < 2.0
+
+
+def test_jpeg_artifacts_keeps_size_and_alters_pixels(gradient_image):
+    out = effects.jpeg_artifacts(gradient_image, quality=30)
+    assert out.size == gradient_image.size
+    assert out.mode == "RGB"
+    diff = np.abs(_arr(out) - _arr(gradient_image))
+    assert 0.1 < diff.mean() < 20.0  # visibly touched, not destroyed
+
+
+def test_disposable_flash_is_warm_punchy_and_vignetted(gradient_image):
     src = _arr(gradient_image)
-    assert np.abs(a - src).mean() > 10
-    assert np.abs(b - src).mean() > 5
-    assert np.abs(a - b).mean() > 10
+    out = _arr(effects.apply_preset(gradient_image, PRESETS["disposable_flash"]))
+    # Warm cast: red gains relative to blue versus the source.
+    assert out[..., 0].mean() / max(out[..., 2].mean(), 1) > \
+        src[..., 0].mean() / src[..., 2].mean()
+    # Dark corners from the heavy vignette.
+    assert out[:8, :8].mean() < src[:8, :8].mean()
+
+
+def test_digicam_2000s_is_sharpened_and_vivid(gradient_image):
+    out = _arr(effects.apply_preset(gradient_image, PRESETS["digicam_2000s"]))
+    reduce_only = dict(PRESETS["digicam_2000s"])
+    del reduce_only["sharpen"]
+    soft = _arr(effects.apply_preset(gradient_image, reduce_only))
+    # The unsharp mask leaves stronger local gradients than the same
+    # pipeline without it.
+    edge_energy = lambda a: np.abs(np.diff(a.mean(axis=-1), axis=1)).mean()
+    assert edge_energy(out) > edge_energy(soft)
+    # Vivid: channel spread grows versus the source.
+    src = _arr(gradient_image)
+    spread = lambda a: np.abs(a - a.mean(axis=-1, keepdims=True)).mean()
+    assert spread(out) > spread(src)
+
+
+def test_vhs_tape_is_washed_and_scanlined(gradient_image):
+    src = _arr(gradient_image)
+    out = _arr(effects.apply_preset(gradient_image, PRESETS["vhs_tape"]))
+    assert out.min() > 2.0  # lifted floor from fade
+    spread = lambda a: np.abs(a - a.mean(axis=-1, keepdims=True)).mean()
+    assert spread(out) < spread(src)  # desaturated
+
+
+def test_cctv_is_near_monochrome_and_green(gradient_image):
+    out = _arr(effects.apply_preset(gradient_image, PRESETS["cctv"]))
+    spread = np.abs(out - out.mean(axis=-1, keepdims=True)).mean()
+    assert spread < 8.0  # saturation 0.12 leaves almost no color
+    assert out[..., 1].mean() > out[..., 0].mean()  # green-leaning
+    assert out[..., 1].mean() > out[..., 2].mean()
+
+
+def test_lomo_xpro_is_saturated_with_dark_corners(gradient_image):
+    src = _arr(gradient_image)
+    out = _arr(effects.apply_preset(gradient_image, PRESETS["lomo_xpro"]))
+    spread = lambda a: np.abs(a - a.mean(axis=-1, keepdims=True)).mean()
+    assert spread(out) > spread(src)  # punchier color than the source
+    assert out[:6, :6].mean() < src[:6, :6].mean() * 0.6  # heavy vignette
+
+
+def test_instant_film_is_warm_and_milky(gradient_image):
+    src = _arr(gradient_image)
+    out = _arr(effects.apply_preset(gradient_image, PRESETS["instant_film"]))
+    assert out.min() > 15.0  # milky lifted blacks
+    # Warm cream cast: red gains relative to blue versus the source.
+    assert out[..., 0].mean() / max(out[..., 2].mean(), 1) > \
+        src[..., 0].mean() / src[..., 2].mean()
+
+
+def test_presets_visually_distinct(gradient_image):
+    outs = {
+        name: _arr(effects.apply_preset(gradient_image, preset))
+        for name, preset in PRESETS.items()
+    }
+    src = _arr(gradient_image)
+    for name, a in outs.items():
+        assert np.abs(a - src).mean() > 5, name
+    done = []
+    for name, a in outs.items():
+        for other in done:
+            assert np.abs(a - outs[other]).mean() > 5, (name, other)
+        done.append(name)

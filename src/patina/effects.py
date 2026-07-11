@@ -12,6 +12,7 @@ like sensor saturation), and converted back to uint8 once at the end.
 from __future__ import annotations
 
 import functools
+import io
 from typing import Any, Mapping, Optional
 
 import numpy as np
@@ -42,11 +43,15 @@ def apply_preset(
         )
     if "reduce_scale" in preset:
         img = reduce_detail(img, preset["reduce_scale"])
+    if "sharpen" in preset:
+        img = sharpen(img, **preset["sharpen"])
     arr = np.asarray(img, dtype=np.float32)
     if "color" in preset:
         arr = color_grade(arr, **preset["color"])
     if "saturation" in preset:
         arr = saturate(arr, preset["saturation"])
+    if "chroma_bleed" in preset:
+        arr = chroma_bleed(arr, **preset["chroma_bleed"])
     if "flash_hotspot" in preset:
         arr = flash_hotspot(arr, **preset["flash_hotspot"])
     if "vignette_strength" in preset:
@@ -63,6 +68,10 @@ def apply_preset(
     if "scanlines" in preset:
         arr = scanlines(arr, **preset["scanlines"])
     out = Image.fromarray(np.clip(arr, 0.0, 255.0).astype(np.uint8), "RGB")
+    if "jpeg_quality" in preset:
+        # Compress at render resolution so the block artifacts get upscaled
+        # with the frame, the way a low-quality in-camera JPEG really looks.
+        out = jpeg_artifacts(out, preset["jpeg_quality"])
     if out.size != orig_size:
         out = out.resize(orig_size, Image.Resampling.BILINEAR)
     return out
@@ -76,6 +85,49 @@ def reduce_detail(img: Image.Image, scale: float) -> Image.Image:
         Image.Resampling.BILINEAR,
     )
     return small.resize((w, h), Image.Resampling.BILINEAR)
+
+
+def sharpen(img: Image.Image, radius: float, amount: float) -> Image.Image:
+    """Unsharp mask with visible halos, like an eager in-camera sharpener.
+
+    Runs right after ``reduce_detail`` so it sharpens the noise-reduced frame
+    the way compact digicams did: soft detail with crunchy, ringing edges.
+    """
+    return img.filter(
+        ImageFilter.UnsharpMask(radius=radius, percent=int(amount * 100), threshold=2)
+    )
+
+
+def chroma_bleed(arr: np.ndarray, radius_ratio: float) -> np.ndarray:
+    """Smear color past luma edges, like composite video / VHS chroma.
+
+    Luma keeps its resolution; the color difference signal is blurred
+    horizontally-and-vertically and re-added, so saturated regions bleed
+    over their outlines while edges stay put.
+    """
+    w = arr.shape[1]
+    luma = arr @ _LUMA
+    radius = max(1.0, w * radius_ratio)
+    for c in range(3):
+        # Pillow can only blur uint8 planes, so the signed difference rides
+        # on a half-scale +128 carrier; the quantization is invisible here.
+        diff_img = Image.fromarray(
+            np.clip((arr[..., c] - luma) * 0.5 + 128.0, 0.0, 255.0).astype(np.uint8),
+            "L",
+        )
+        blurred = np.asarray(
+            diff_img.filter(ImageFilter.GaussianBlur(radius)), dtype=np.float32
+        )
+        arr[..., c] = luma + (blurred - 128.0) * 2.0
+    return arr
+
+
+def jpeg_artifacts(img: Image.Image, quality: int) -> Image.Image:
+    """Round-trip through an in-memory JPEG to bake in real block artifacts."""
+    buf = io.BytesIO()
+    img.save(buf, format="JPEG", quality=int(quality))
+    buf.seek(0)
+    return Image.open(buf).convert("RGB")
 
 
 def color_grade(
