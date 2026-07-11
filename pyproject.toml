@@ -6,6 +6,7 @@ build-backend = "setuptools.build_meta"
 name = "patina"
 version = "1.0.0"
 description = "Offline nostalgic digicam/camcorder filter for photos and videos"
+readme = "README.md"
 requires-python = ">=3.9"
 dependencies = [
     "Pillow>=9.1",
