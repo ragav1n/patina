@@ -28,6 +28,7 @@ supported inputs:
   videos  .mp4 .mov .avi .mkv .webm .m4v   (needs ffmpeg on PATH; audio is kept)
 
 examples:
+  patina                                    guided menu — just run it, no flags
   patina photo.jpg                          flash_night look -> photo_flash_night.jpg
   patina photo.heic --preset camcorder_warm warm camcorder look, HEIC in and out
   patina vacation/                          every image -> vacation/nostalgia_flash_night/
@@ -178,7 +179,17 @@ def _dispatch(args: argparse.Namespace) -> None:
 
 def main(argv: Optional[Sequence[str]] = None) -> int:
     parser = build_parser()
-    args = parser.parse_args(argv)
+    raw = list(sys.argv[1:] if argv is None else argv)
+    # Bare `patina` in a real terminal -> guided walkthrough. If either stream
+    # isn't a TTY (piped, redirected, tests, CI) fall through to normal parsing,
+    # which prints help for no args — so scripts never hang waiting on stdin.
+    if not raw and sys.stdin.isatty() and sys.stdout.isatty():
+        from patina import interactive
+        args = interactive.run(parser)
+        if args is None:
+            return 0
+    else:
+        args = parser.parse_args(raw)
     if args.list_presets:
         width = max(len(name) for name in PRESETS)
         for name in sorted(PRESETS):

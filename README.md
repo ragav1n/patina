@@ -78,10 +78,18 @@ Then reopen the terminal and check with `ffmpeg -version`.
 
 ## Use it
 
-Point it at a photo, a video, or a folder of photos:
+New to command-line flags? Just run `patina` with nothing after it:
 
 ```
-patina IMG_7719.HEIC
+patina
+```
+
+In a terminal it opens a guided menu — pick a file (drag it in), arrow-key through the looks, optionally add a timestamp, and go. It even prints the equivalent one-line command at the end, so you'll know the flags for next time.
+
+Or drive it directly. Point it at a photo, a video, or a folder of photos:
+
+```
+patina photo.HEIC
 patina clip.mp4 --preset y2k_camcorder
 patina vacation/
 ```
@@ -89,10 +97,10 @@ patina vacation/
 Not sure which look you want? Run them all and pick by eye:
 
 ```
-patina IMG_7719.HEIC -all
+patina photo.HEIC -all
 ```
 
-Output lands next to the input as `<name>_<preset><ext>`, so `IMG_7719.HEIC` becomes `IMG_7719_flash_night.HEIC`. A folder becomes `vacation/nostalgia_<preset>/` with the same filenames inside.
+Output lands next to the input as `<name>_<preset><ext>`, so `photo.HEIC` becomes `photo_flash_night.HEIC`. A folder becomes `vacation/nostalgia_<preset>/` with the same filenames inside.
 
 It reads `.jpg .jpeg .png .bmp .tiff .webp .heic .heif` images and `.mp4 .mov .avi .mkv .webm .m4v` videos. iPhone HEIC photos keep their rotation, and HEIC in means HEIC out.
 

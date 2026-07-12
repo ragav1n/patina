@@ -6,7 +6,7 @@ import sys
 import pytest
 from PIL import Image
 
-from patina import cli
+from patina import cli, interactive
 from patina.presets import PRESETS
 
 from conftest import gradient_array
@@ -157,3 +157,47 @@ def test_new_preset_needs_only_config(monkeypatch, jpg_path, capsys):
     assert (jpg_path.parent / "photo_test_sepia.jpg").exists()
     assert cli.main(["--list-presets"]) == 0
     assert "test_sepia" in capsys.readouterr().out
+
+
+# --- interactive walkthrough: the pure form-to-Namespace logic ----------------
+# The questionary prompting is TTY-gated and thin; the logic worth testing is
+# _build_args, which needs no pseudo-terminal.
+
+def test_interactive_normal_pick_fills_namespace():
+    args = interactive._build_args(cli.build_parser(), {
+        "input": "/tmp/x.jpg", "look": "y2k_camcorder",
+        "timestamp": "none", "output": "",
+    })
+    assert args.input == "/tmp/x.jpg"
+    assert args.preset == "y2k_camcorder"
+    assert args.all_presets is False
+    assert args.timestamp is None
+    assert args.output is None
+    # untouched flags keep their real argparse defaults
+    assert args.rec is False and args.rec_counter == "00:00:06"
+
+
+def test_interactive_all_looks_sets_all_presets():
+    args = interactive._build_args(cli.build_parser(), {
+        "input": "pics/", "look": interactive._ALL,
+        "timestamp": "none", "output": "",
+    })
+    assert args.all_presets is True
+    assert args.preset is None  # -all wins in dispatch regardless
+
+
+def test_interactive_current_timestamp_and_trimmed_output():
+    args = interactive._build_args(cli.build_parser(), {
+        "input": "p.jpg", "look": "cctv",
+        "timestamp": "now", "output": "  out/retro.png  ",
+    })
+    assert isinstance(args.timestamp, str) and args.timestamp
+    assert args.output == "out/retro.png"
+
+
+def test_interactive_custom_timestamp_text():
+    args = interactive._build_args(cli.build_parser(), {
+        "input": "p.jpg", "look": "cctv", "timestamp": "custom",
+        "timestamp_text": "26/02/'23  02:52", "output": "",
+    })
+    assert args.timestamp == "26/02/'23  02:52"

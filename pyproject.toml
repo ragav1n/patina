@@ -12,6 +12,7 @@ dependencies = [
     "Pillow>=9.1",
     "numpy>=1.21",
     "pillow-heif>=0.13",
+    "questionary>=2.0",
 ]
 
 [project.optional-dependencies]
