@@ -7,7 +7,7 @@ import sys
 from pathlib import Path
 from typing import Optional, Sequence
 
-from patina import __version__, image_io, overlays, video
+from patina import __version__, image_io, overlays, ui, video
 from patina.errors import PatinaError
 from patina.presets import PRESETS
 from patina.render import RenderOptions
@@ -120,9 +120,9 @@ def _process_one(
             # presets; give each preset its own subdirectory.
             out_dir = out / options.preset if (multi and out) else out
             written = image_io.process_directory(path, out_dir, options)
-            print(f"wrote {len(written)} images to {written[0].parent}")
+            ui.done(f"wrote {len(written)} images to {written[0].parent}")
         else:
-            print(f"wrote {image_io.process_image(path, out, options)}")
+            ui.done(f"wrote {image_io.process_image(path, out, options)}")
     elif suffix in video.VIDEO_EXTENSIONS:
         if args.frame_counter is not None and show_notes:
             _note("--frame-counter applies to images only; ignoring")
@@ -133,7 +133,7 @@ def _process_one(
             out / video.default_output_path(path, options.preset).name
             if (multi and out) else out
         )
-        print(f"wrote {video.process_video(path, out_file, options)}")
+        ui.done(f"wrote {video.process_video(path, out_file, options)}")
     else:
         raise PatinaError(
             f"unsupported file type '{path.suffix or path.name}' — supported "
@@ -164,7 +164,7 @@ def _dispatch(args: argparse.Namespace) -> None:
         names = [args.preset or _DEFAULT_PRESET]
     for i, name in enumerate(names):
         if args.all_presets:
-            print(f"[{i + 1}/{len(names)}] {name}")
+            ui.progress(i + 1, len(names), name)
         options = RenderOptions(
             preset=name,
             timestamp_text=timestamp_text,
@@ -191,9 +191,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     else:
         args = parser.parse_args(raw)
     if args.list_presets:
-        width = max(len(name) for name in PRESETS)
-        for name in sorted(PRESETS):
-            print(f"{name:<{width}}  {PRESETS[name]['description']}")
+        ui.list_presets(PRESETS)
         return 0
     if args.input is None:
         parser.print_help()

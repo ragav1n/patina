@@ -173,4 +173,37 @@ PRESETS: Dict[str, Dict[str, Any]] = {
         "grain_sigma": 8,
         "scanlines": {"spacing": 3, "opacity": 32},
     },
+    "cyberpunk": {
+        "description": "Neon cyberpunk night: cool base shoved hard to magenta-pink, "
+                       "punchy crisp contrast, glowing highlights, dark corners.",
+        # Warmth -100 (cool) + Tint +100 (magenta) from the recipe -> drop green,
+        # lift blue; saturation runs after the grade and amplifies the cast.
+        "render_width": 1280,
+        "sharpen": {"radius": 1.4, "amount": 0.6},
+        "color": {"r_mult": 1.02, "g_mult": 0.80, "b_mult": 1.22,
+                  "brightness": 1.06, "contrast": 1.22},
+        "saturation": 1.20,
+        "vignette_strength": 0.45,
+        "bloom": {"threshold": 180, "radius_ratio": 0.02, "strength": 0.35},
+        "fade": {"black": 10, "white": 232},
+        "aberration_shift": 2,
+        "grain_sigma": 4,
+    },
+    "low_shine": {
+        "description": "Dark moody flash: desaturated cool tones, deep contrast, a "
+                       "bright glowing flash-lit subject against near-black surroundings.",
+        # flash_hotspot only brightens, so it's paired with a vignette to sink the
+        # surround; highlights +100 in the recipe -> bloom the lit subject.
+        "render_width": 1080,
+        "sharpen": {"radius": 1.6, "amount": 0.8},
+        "color": {"r_mult": 0.96, "g_mult": 1.00, "b_mult": 1.08,
+                  "brightness": 0.78, "contrast": 1.34},
+        "saturation": 0.72,
+        "flash_hotspot": {"cx_ratio": 0.5, "cy_ratio": 0.45,
+                          "radius_ratio": 0.55, "strength": 0.28},
+        "vignette_strength": 0.42,
+        "bloom": {"threshold": 160, "radius_ratio": 0.02, "strength": 0.52},
+        "fade": {"black": 12, "white": 255},
+        "grain_sigma": 6,
+    },
 }

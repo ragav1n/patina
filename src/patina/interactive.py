@@ -15,17 +15,26 @@ import sys
 from pathlib import Path
 from typing import Optional
 
-from patina import overlays
+from patina import overlays, ui
 from patina.presets import PRESETS
 
 # Menu value standing in for "-all". A NUL keeps it from ever colliding with a
 # real preset name.
 _ALL = "\x00all-looks"
 
-_BANNER = (
-    "patina — point me at a photo, video, or folder and pick a look.\n"
-    "        (press Ctrl-C anytime to bail)\n"
-)
+# questionary Style tokens, themed from the shared verdigris/copper palette.
+_STYLE_TOKENS = [
+    ("qmark", f"fg:{ui.PATINA} bold"),
+    ("question", "bold"),
+    ("answer", f"fg:{ui.COPPER} bold"),
+    ("pointer", f"fg:{ui.COPPER} bold"),
+    ("highlighted", f"fg:{ui.COPPER} bold"),
+    ("selected", f"fg:{ui.PATINA}"),
+    ("instruction", f"fg:{ui.DIM} italic"),
+    ("separator", f"fg:{ui.DIM}"),
+    ("disabled", "fg:#666 italic"),
+]
+_QMARK = "◆"
 
 
 def _clean_path(raw: str) -> str:
@@ -72,8 +81,8 @@ def _build_args(parser: argparse.ArgumentParser, answers: dict) -> argparse.Name
     return args
 
 
-def _echo_command(args: argparse.Namespace, ts_mode: str) -> None:
-    """Print the equivalent one-liner so the user learns the flags."""
+def _command_string(args: argparse.Namespace, ts_mode: str) -> str:
+    """The equivalent one-liner, so the user learns the flags for next time."""
     parts = ["patina", shlex.quote(args.input)]
     if args.all_presets:
         parts.append("-all")
@@ -85,7 +94,7 @@ def _echo_command(args: argparse.Namespace, ts_mode: str) -> None:
         parts.append(f"--timestamp {shlex.quote(args.timestamp)}")
     if args.output:
         parts.append(f"-o {shlex.quote(args.output)}")
-    print(f"\nrunning:  {' '.join(parts)}\n")
+    return " ".join(parts)
 
 
 def run(parser: argparse.ArgumentParser) -> Optional[argparse.Namespace]:
@@ -100,28 +109,34 @@ def run(parser: argparse.ArgumentParser) -> Optional[argparse.Namespace]:
         parser.print_help()
         return None
 
-    print(_BANNER)
+    style = questionary.Style(_STYLE_TOKENS)
+    ui.banner()
 
     raw_path = questionary.path(
-        "Which photo, video, or folder?", validate=_validate_path
+        "Which photo, video, or folder?", validate=_validate_path,
+        style=style, qmark=_QMARK,
     ).ask()
     if raw_path is None:
         return None
 
-    width = max(len(name) for name in PRESETS)
+    width = max(len(name) for name in list(PRESETS) + ["all looks"])
     look_choices = [
         questionary.Choice(
-            title=f"{name:<{width}}   {PRESETS[name]['description']}", value=name
+            title=ui.choice_title(name, PRESETS[name]["description"], width),
+            value=name,
         )
         for name in sorted(PRESETS)
     ]
     look_choices.append(
         questionary.Choice(
-            title=f"{'all looks':<{width}}   apply every preset (one file each)",
+            title=ui.choice_title("all looks", "apply every preset (one file each)", width),
             value=_ALL,
         )
     )
-    look = questionary.select("Pick a look:", choices=look_choices).ask()
+    look = questionary.select(
+        "Pick a look:", choices=look_choices, style=style, qmark=_QMARK,
+        pointer="❯", instruction="↑/↓ then Enter", show_description=False,
+    ).ask()
     if look is None:
         return None
 
@@ -132,6 +147,7 @@ def run(parser: argparse.ArgumentParser) -> Optional[argparse.Namespace]:
             questionary.Choice("Current date & time", value="now"),
             questionary.Choice("Custom text…", value="custom"),
         ],
+        style=style, qmark=_QMARK, pointer="❯",
     ).ask()
     if ts_mode is None:
         return None
@@ -139,13 +155,15 @@ def run(parser: argparse.ArgumentParser) -> Optional[argparse.Namespace]:
     ts_text = ""
     if ts_mode == "custom":
         ts_text = questionary.text(
-            "Timestamp text:", default=overlays.default_timestamp_text()
+            "Timestamp text:", default=overlays.default_timestamp_text(),
+            style=style, qmark=_QMARK,
         ).ask()
         if ts_text is None:
             return None
 
     output = questionary.text(
-        "Save as (blank = auto-name next to the input):"
+        "Save as (blank = auto-name next to the input):",
+        style=style, qmark=_QMARK,
     ).ask()
     if output is None:
         return None
@@ -158,5 +176,5 @@ def run(parser: argparse.ArgumentParser) -> Optional[argparse.Namespace]:
         "output": output,
     }
     args = _build_args(parser, answers)
-    _echo_command(args, ts_mode)
+    ui.command_panel(_command_string(args, ts_mode))
     return args

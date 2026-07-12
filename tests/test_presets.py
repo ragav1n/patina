@@ -15,6 +15,7 @@ def test_shipping_presets():
         "flash_night", "camcorder_warm", "y2k_camcorder",
         "disposable_flash", "digicam_2000s", "vhs_tape",
         "cctv", "lomo_xpro", "instant_film", "blurry_aesthetic",
+        "cyberpunk", "low_shine",
     }
 
 

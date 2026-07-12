@@ -13,6 +13,7 @@ dependencies = [
     "numpy>=1.21",
     "pillow-heif>=0.13",
     "questionary>=2.0",
+    "rich>=13",
 ]
 
 [project.optional-dependencies]
