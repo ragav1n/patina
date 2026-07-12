@@ -25,8 +25,10 @@ RED = "#D06B5C"      # muted terracotta — warnings
 
 try:
     from rich import box
+    from rich.align import Align
     from rich.console import Console, Group
     from rich.panel import Panel
+    from rich.rule import Rule
     from rich.table import Table
     from rich.text import Text
 
@@ -36,20 +38,78 @@ except ImportError:  # pragma: no cover - exercised only without rich installed
     HAVE_RICH = False
     _console = None
 
+# 5-row block-letter glyphs (``#`` = lit pixel, ``.`` = gap), used to render
+# the wordmark as full-width ASCII art instead of plain text.
+_GLYPHS: Dict[str, List[str]] = {
+    "P": ["#####", "#...#", "#####", "#....", "#...."],
+    "A": [".###.", "#...#", "#####", "#...#", "#...#"],
+    "T": ["#####", "..#..", "..#..", "..#..", "..#.."],
+    "I": ["###", ".#.", ".#.", ".#.", "###"],
+    "N": ["#...#", "##..#", "#.#.#", "#..##", "#...#"],
+}
+_WORDMARK = "PATINA"
+
+
+def _lerp_color(start: str, end: str, t: float) -> str:
+    """Interpolate between two ``#rrggbb`` colors at ``t`` in [0, 1]."""
+    r1, g1, b1 = int(start[1:3], 16), int(start[3:5], 16), int(start[5:7], 16)
+    r2, g2, b2 = int(end[1:3], 16), int(end[3:5], 16), int(end[5:7], 16)
+    r = round(r1 + (r2 - r1) * t)
+    g = round(g1 + (g2 - g1) * t)
+    b = round(b1 + (b2 - b1) * t)
+    return f"#{r:02x}{g:02x}{b:02x}"
+
+
+def _logo_rows() -> List[str]:
+    """``_WORDMARK`` rendered as 5 rows of ``#``/``.`` pixels, one blank
+    column between letters."""
+    rows = ["" for _ in range(5)]
+    for i, letter in enumerate(_WORDMARK):
+        glyph = _GLYPHS[letter]
+        sep = "" if i == 0 else " "
+        for r in range(5):
+            rows[r] += sep + glyph[r]
+    return rows
+
+
+def _gradient_row(row: str, width: int) -> Text:
+    """One logo row as a verdigris-to-copper gradient, left to right."""
+    text = Text()
+    for col, pixel in enumerate(row):
+        if pixel == "#":
+            color = _lerp_color(PATINA, COPPER, col / max(1, width - 1))
+            text.append("██", style=f"bold {color}")
+        else:
+            text.append("  ")
+    return text
+
 
 def banner() -> None:
-    """The double-boxed filmstrip wordmark shown at the top of the guided menu."""
+    """The full-width wordmark shown at the top of the guided menu: a
+    verdigris-to-copper gradient logo, centered, with a full-row divider —
+    scaled down to a compact one-liner on narrow terminals."""
     if not HAVE_RICH:
-        print("patina — old-camera looks · fully offline\n")
+        print("patina — photos, aged to taste\n")
         return
-    word = Text(justify="center")
-    word.append("▓▒░  ", style=COPPER)
-    word.append("P A T I N A", style=f"bold {PATINA}")
-    word.append("  ░▒▓", style=COPPER)
-    tagline = Text("photos, aged to taste", style=f"italic {DIM}",
-                   justify="center")
-    _console.print(Panel(Group(word, tagline), box=box.DOUBLE,
-                         border_style=PATINA, padding=(0, 4), expand=False))
+    rows = _logo_rows()
+    width = max(len(r) for r in rows)
+    columns = shutil.get_terminal_size((80, 24)).columns
+    if columns < width * 2 + 4:
+        word = Text(justify="center")
+        word.append("▓▒░  ", style=COPPER)
+        word.append("P A T I N A", style=f"bold {PATINA}")
+        word.append("  ░▒▓", style=COPPER)
+        tagline = Text("photos, aged to taste", style=f"italic {DIM}",
+                       justify="center")
+        _console.print(Panel(Group(word, tagline), box=box.DOUBLE,
+                             border_style=PATINA, padding=(0, 4), expand=False))
+        return
+    logo = Group(*(_gradient_row(row, width) for row in rows))
+    tagline = Text("photos, aged to taste", style=f"italic {DIM}")
+    _console.print(Align.center(logo))
+    _console.print()
+    _console.print(Align.center(tagline))
+    _console.print(Rule(style=DIM))
 
 
 def space() -> None:
