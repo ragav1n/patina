@@ -86,7 +86,7 @@ New to command-line flags? Just run `patina` with nothing after it:
 patina
 ```
 
-In a terminal it opens a guided menu — a big verdigris-to-copper gradient wordmark up top, then just pick a file (drag it in), arrow-key through the looks, optionally add a timestamp, and go. It even prints the equivalent one-line command at the end, so you'll know the flags for next time.
+In a terminal it opens a guided menu — pick a file (drag it in), arrow-key through the looks, optionally add a timestamp, and go. It even prints the equivalent one-line command at the end, so you'll know the flags for next time.
 
 Or drive it directly. Point it at a photo, a video, or a folder of photos:
 
