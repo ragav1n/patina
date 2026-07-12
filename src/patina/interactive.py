@@ -111,6 +111,7 @@ def run(parser: argparse.ArgumentParser) -> Optional[argparse.Namespace]:
 
     style = questionary.Style(_STYLE_TOKENS)
     ui.banner()
+    ui.space()
 
     ui.hint("  tip: drag a photo, video, or folder straight into the terminal — or type a path")
     raw_path = questionary.path(
@@ -120,6 +121,7 @@ def run(parser: argparse.ArgumentParser) -> Optional[argparse.Namespace]:
     if raw_path is None:
         return None
 
+    ui.space()
     width = max(len(name) for name in list(PRESETS) + ["all looks"])
     look_choices = [
         questionary.Choice(
@@ -141,6 +143,7 @@ def run(parser: argparse.ArgumentParser) -> Optional[argparse.Namespace]:
     if look is None:
         return None
 
+    ui.space()
     ts_mode = questionary.select(
         "Add a corner timestamp?",
         choices=[
@@ -155,6 +158,7 @@ def run(parser: argparse.ArgumentParser) -> Optional[argparse.Namespace]:
 
     ts_text = ""
     if ts_mode == "custom":
+        ui.space()
         ts_text = questionary.text(
             "Timestamp text:", default=overlays.default_timestamp_text(),
             style=style, qmark=_QMARK,
@@ -162,6 +166,7 @@ def run(parser: argparse.ArgumentParser) -> Optional[argparse.Namespace]:
         if ts_text is None:
             return None
 
+    ui.space()
     output = questionary.text(
         "Save as (blank = auto-name next to the input):",
         style=style, qmark=_QMARK,
@@ -177,5 +182,6 @@ def run(parser: argparse.ArgumentParser) -> Optional[argparse.Namespace]:
         "output": output,
     }
     args = _build_args(parser, answers)
+    ui.space()
     ui.command_panel(_command_string(args, ts_mode))
     return args

@@ -52,6 +52,14 @@ def banner() -> None:
                          border_style=PATINA, padding=(0, 4), expand=False))
 
 
+def space() -> None:
+    """A single blank line, to give each prompt some breathing room."""
+    if not HAVE_RICH:
+        print()
+        return
+    _console.print()
+
+
 def hint(message: str) -> None:
     """A dim, secondary tip line (e.g. the drag-and-drop nudge)."""
     if not HAVE_RICH:
