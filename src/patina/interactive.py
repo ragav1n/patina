@@ -112,6 +112,7 @@ def run(parser: argparse.ArgumentParser) -> Optional[argparse.Namespace]:
     style = questionary.Style(_STYLE_TOKENS)
     ui.banner()
 
+    ui.hint("  tip: drag a photo, video, or folder straight into the terminal — or type a path")
     raw_path = questionary.path(
         "Which photo, video, or folder?", validate=_validate_path,
         style=style, qmark=_QMARK,

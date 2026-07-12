@@ -46,10 +46,18 @@ def banner() -> None:
     word.append("▓▒░  ", style=COPPER)
     word.append("P A T I N A", style=f"bold {PATINA}")
     word.append("  ░▒▓", style=COPPER)
-    tagline = Text("old-camera looks · fully offline", style=f"italic {DIM}",
+    tagline = Text("photos, aged to taste", style=f"italic {DIM}",
                    justify="center")
     _console.print(Panel(Group(word, tagline), box=box.DOUBLE,
                          border_style=PATINA, padding=(0, 4), expand=False))
+
+
+def hint(message: str) -> None:
+    """A dim, secondary tip line (e.g. the drag-and-drop nudge)."""
+    if not HAVE_RICH:
+        print(message)
+        return
+    _console.print(Text(message, style=f"italic {DIM}"))
 
 
 def command_panel(cmd: str) -> None:
