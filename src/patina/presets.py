@@ -239,4 +239,24 @@ PRESETS: Dict[str, Dict[str, Any]] = {
         "grain_sigma": 12,
         "grain_mono": True,
     },
+    "fujifilm": {
+        "description": "Warm Fujifilm-style Lightroom recipe: punchy saturated color, "
+                       "warm yellow-orange highlights and yellow-green shadows, crisp "
+                       "sharpening, fine grain.",
+        # Recipe (Lightroom): WB Temp 6600K/Tint +7; Vibrance +25/Saturation +40;
+        # Color Grading -> Highlights hue 48/sat 32, Shadows hue 66/sat 30, both
+        # Blending 100 (warm yellow-orange highlights, yellow-green shadows);
+        # Color Mix -> Yellow hue -5, Orange hue -10 (nudged toward red);
+        # Sharpening 40/Radius 1.0/Detail 25; Color noise reduction 25/Detail
+        # 50/Smoothness 55; Grain 40/Size 25/Roughness 25. No per-tonal-range
+        # grading or per-hue mixer here, so the warm cast rides on the channel
+        # gains and the vibrance/saturation boost rides on the global
+        # saturation instead.
+        "sharpen": {"radius": 1.0, "amount": 0.4},
+        "color": {"r_mult": 1.06, "g_mult": 1.04, "b_mult": 0.88,
+                  "brightness": 1.03, "contrast": 1.10},
+        "saturation": 1.40,
+        "grain_sigma": 7,
+        "grain_mono": True,
+    },
 }

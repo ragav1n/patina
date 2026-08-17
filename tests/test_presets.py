@@ -16,6 +16,7 @@ def test_shipping_presets():
         "disposable_flash", "digicam_2000s", "vhs_tape",
         "cctv", "lomo_xpro", "instant_film", "blurry_aesthetic",
         "cyberpunk", "low_shine", "attack_on_titan", "dark_fantasy",
+        "fujifilm",
     }
 
 
@@ -75,3 +76,5 @@ def test_signature_steps():
     assert "grain_sigma" not in PRESETS["attack_on_titan"]  # clean digital edit, no tape/film wear
     assert PRESETS["dark_fantasy"]["saturation"] < 1.0  # muted warm tones, not vivid
     assert PRESETS["dark_fantasy"]["color"]["b_mult"] > PRESETS["dark_fantasy"]["color"]["r_mult"]  # blue-violet push
+    assert PRESETS["fujifilm"]["saturation"] >= 1.3  # punchy vibrance + saturation push
+    assert PRESETS["fujifilm"]["color"]["r_mult"] > PRESETS["fujifilm"]["color"]["b_mult"]  # warm yellow-orange cast
