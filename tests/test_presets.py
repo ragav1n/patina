@@ -16,7 +16,7 @@ def test_shipping_presets():
         "disposable_flash", "digicam_2000s", "vhs_tape",
         "cctv", "lomo_xpro", "instant_film", "blurry_aesthetic",
         "cyberpunk", "low_shine", "attack_on_titan", "dark_fantasy",
-        "fujifilm",
+        "fujifilm", "matrix",
     }
 
 

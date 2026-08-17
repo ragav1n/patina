@@ -2,7 +2,7 @@
 
 A small CLI tool I use to make my photos and videos look like they came off an old digicam or camcorder. Everything runs on your own machine: no uploads, no accounts, nothing phones home.
 
-Fifteen looks are built in:
+Sixteen looks are built in:
 
 | Preset | What you get |
 |---|---|
@@ -12,6 +12,7 @@ Fifteen looks are built in:
 | `attack_on_titan` | viral anime-sky edit: rich teal-blue sky, blown-out glowing clouds, punchy contrast and saturation |
 | `dark_fantasy` | moody cinematic grade: deep blue-violet sky and foliage, glowing warm accents on lit subjects, coarse grain |
 | `fujifilm` | warm Fujifilm-style grade: punchy saturated color mounted on a white print border, fine grain |
+| `matrix` | bullet-time Matrix green: heavy green-yellow cast over deep crushed shadows, hazy soft detail, coarse grain |
 | `camcorder_warm` | photo of a camcorder's LCD: warm brown cast, milky blacks, faint scanlines |
 | `y2k_camcorder` | y2k home-video still: washed cool colors, lifted blacks, hazy highlight bloom, soft detail |
 | `disposable_flash` | cheap disposable film camera with the flash on: warm punchy color, hot center, dark corners, chunky grain |

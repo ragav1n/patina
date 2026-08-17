@@ -277,4 +277,33 @@ PRESETS: Dict[str, Dict[str, Any]] = {
         "grain_mono": True,
         "instant_frame": {"thickness_ratio": 0.045, "bottom_ratio": 0.045},
     },
+    "matrix": {
+        "description": "Bullet-time Matrix green: heavy green-yellow cast over deep "
+                       "crushed shadows, hazy soft detail, coarse grain.",
+        # Recipe (Lightroom): WB Tint -40 (green); Color Grading -> Shadows hue
+        # 113/sat 100, Midtones hue 67/sat 100, Highlights hue 78/sat 100 (all
+        # maxed-out green-yellow), Global hue 58/sat 42; Texture 0/Clarity
+        # -37/Dehaze 0; Tone Curve pulls the black point in hard (crushed
+        # shadows) with the Green channel curve pulled even harder; Noise
+        # Reduction 55; Color Mix -> Yellow hue +66 (toward green), Orange hue
+        # -3/sat -24. No per-luminance color grading or per-channel curve
+        # here, so the tint rides on the channel gains and the crush rides on
+        # brightness+contrast instead.
+        # Fit directly against 3 real before/after reference photos (a
+        # portrait, a roofline against sky, a building facade): sampling
+        # matching patches gave r/g/b gains, brightness, and contrast that
+        # reproduce the shadow/midtone crush and the green-yellow cast closely.
+        # One thing that fit couldn't explain: both "after" skies started as a
+        # similar blue and one lands near-black while the other flips to deep
+        # red — that's not reachable by any per-channel linear gain (a fixed
+        # r/g/b multiplier can't send the same input hue two different ways),
+        # so it's likely a localized sky edit in the source recipe rather than
+        # a global setting. Left as green here, like the rest of the frame.
+        "reduce_scale": 0.85,
+        "color": {"r_mult": 1.00, "g_mult": 1.40, "b_mult": 0.35,
+                  "brightness": 0.88, "contrast": 1.22},
+        "saturation": 0.90,
+        "grain_sigma": 9,
+        "grain_mono": True,
+    },
 }
