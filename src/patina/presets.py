@@ -306,4 +306,25 @@ PRESETS: Dict[str, Dict[str, Any]] = {
         "grain_sigma": 9,
         "grain_mono": True,
     },
+    "blue_hour": {
+        "description": "Instagram blue-hour Lightroom recipe: any photo pushed into a "
+                       "deep saturated blue-cyan cast with glowing highlights and moody "
+                       "punchy contrast.",
+        # Recipe (Lightroom): WB Temp 5050K/Tint +18/Vibrance 0; Color Grading
+        # pushes Shadows (hue 225/sat 62), Midtones (hue 226/sat 75), and
+        # Highlights (hue 221/sat 73) all toward the same blue, plus a faint
+        # green Global tint (hue 117/sat 14); Color Mix -> Aqua hue+72/sat+39/
+        # lum-1, Blue hue+19/sat+22/lum-2; a brightening tone curve (lifted
+        # shadows, rolled-off highlights). No per-tonal-range grading or
+        # per-hue mixer here, so the all-tonal-range blue push rides on the
+        # channel gains — green held near-neutral rather than crushed
+        # alongside red, for the cyan-blue lean the Aqua/Global-green pushes
+        # give it (vs. dark_fantasy's more even r/g suppression, which reads
+        # violet-blue) — and the curve's brightening/rolloff rides on fade.
+        "color": {"r_mult": 0.58, "g_mult": 0.82, "b_mult": 1.60,
+                  "brightness": 0.88, "contrast": 1.25},
+        "saturation": 1.30,
+        "bloom": {"threshold": 205, "radius_ratio": 0.02, "strength": 0.30},
+        "fade": {"black": 14, "white": 245},
+    },
 }

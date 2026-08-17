@@ -16,7 +16,7 @@ def test_shipping_presets():
         "disposable_flash", "digicam_2000s", "vhs_tape",
         "cctv", "lomo_xpro", "instant_film", "blurry_aesthetic",
         "cyberpunk", "low_shine", "attack_on_titan", "dark_fantasy",
-        "fujifilm", "matrix",
+        "fujifilm", "matrix", "blue_hour",
     }
 
 
@@ -80,3 +80,6 @@ def test_signature_steps():
     assert PRESETS["fujifilm"]["color"]["r_mult"] > PRESETS["fujifilm"]["color"]["b_mult"]  # warm cast
     assert "instant_frame" in PRESETS["fujifilm"]  # mounted on a white print border
     assert PRESETS["fujifilm"]["instant_frame"]["thickness_ratio"] == PRESETS["fujifilm"]["instant_frame"]["bottom_ratio"]  # even border, not a Polaroid bottom
+    assert (PRESETS["blue_hour"]["color"]["b_mult"]
+            > PRESETS["blue_hour"]["color"]["g_mult"]
+            > PRESETS["blue_hour"]["color"]["r_mult"])  # cyan-blue lean, not violet
