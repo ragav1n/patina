@@ -2,13 +2,14 @@
 
 A small CLI tool I use to make my photos and videos look like they came off an old digicam or camcorder. Everything runs on your own machine: no uploads, no accounts, nothing phones home.
 
-Twelve looks are built in:
+Thirteen looks are built in:
 
 | Preset | What you get |
 |---|---|
 | `flash_night` | harsh flash photo at night: cool blue cast, bright center, near-black corners, heavy grain |
 | `cyberpunk` | neon cyberpunk night: cool base pushed hard to magenta-pink, punchy crisp contrast, glowing highlights, dark corners |
 | `low_shine` | dark moody flash: desaturated cool tones, deep contrast, a bright glowing subject against near-black surroundings |
+| `attack_on_titan` | viral anime-sky edit: rich teal-blue sky, blown-out glowing clouds, punchy contrast and saturation |
 | `camcorder_warm` | photo of a camcorder's LCD: warm brown cast, milky blacks, faint scanlines |
 | `y2k_camcorder` | y2k home-video still: washed cool colors, lifted blacks, hazy highlight bloom, soft detail |
 | `disposable_flash` | cheap disposable film camera with the flash on: warm punchy color, hot center, dark corners, chunky grain |
@@ -66,7 +67,7 @@ Either way, check it worked:
 patina --list-presets
 ```
 
-You should see the twelve looks listed. That's it for photos.
+You should see the thirteen looks listed. That's it for photos.
 
 ### 4. For videos only: ffmpeg
 

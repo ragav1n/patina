@@ -15,7 +15,7 @@ def test_shipping_presets():
         "flash_night", "camcorder_warm", "y2k_camcorder",
         "disposable_flash", "digicam_2000s", "vhs_tape",
         "cctv", "lomo_xpro", "instant_film", "blurry_aesthetic",
-        "cyberpunk", "low_shine",
+        "cyberpunk", "low_shine", "attack_on_titan",
     }
 
 
@@ -71,3 +71,5 @@ def test_signature_steps():
     assert "instant_frame" in PRESETS["instant_film"]  # the paper border
     assert "motion_blur" in PRESETS["blurry_aesthetic"]
     assert "sharpen" not in PRESETS["blurry_aesthetic"]
+    assert PRESETS["attack_on_titan"]["saturation"] >= 1.5  # vivid sky, not nostalgic
+    assert "grain_sigma" not in PRESETS["attack_on_titan"]  # clean digital edit, no tape/film wear

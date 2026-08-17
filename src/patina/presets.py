@@ -206,4 +206,17 @@ PRESETS: Dict[str, Dict[str, Any]] = {
         "fade": {"black": 12, "white": 255},
         "grain_sigma": 6,
     },
+    "attack_on_titan": {
+        "description": "Viral anime-sky edit: rich teal-blue sky, blown-out glowing "
+                       "clouds, punchy contrast and saturation.",
+        # Recipe (Snapseed): Selective Color -> Blue, Hue -11; Tune Image ->
+        # Brightness +38, Contrast +27, Saturation +83; Bloom Strength +14;
+        # Glamour Glow +100. No selective-hue tool here, so the blue push rides
+        # on the channel gains instead; the two glow passes fold into one wide,
+        # low-threshold bloom.
+        "color": {"r_mult": 0.97, "g_mult": 1.02, "b_mult": 1.10,
+                  "brightness": 1.18, "contrast": 1.20},
+        "saturation": 1.75,
+        "bloom": {"threshold": 150, "radius_ratio": 0.045, "strength": 0.60},
+    },
 }
