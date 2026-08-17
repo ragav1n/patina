@@ -303,21 +303,15 @@
     100% { transform: translateX(280%); }
   }
 
-  /* ---- result: styled like an instant print, deliberately breaks the
-     panel radius scale so it reads as a physical photo, not app chrome */
   #previewFrame {
     display: none;
-    background: #ece6da;
-    padding: 10px 10px 34px;
-    border-radius: 4px;
     margin: 4px 0 20px;
-    transform: rotate(-0.6deg);
-    box-shadow: 0 16px 34px rgba(0,0,0,0.4), 0 2px 6px rgba(0,0,0,0.3);
   }
   #preview {
     display: block;
     width: 100%;
-    border-radius: 2px;
+    border-radius: var(--radius-control);
+    border: 1px solid var(--panel-border);
   }
 
   .save-btn {

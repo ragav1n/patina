@@ -19,6 +19,8 @@ const saveHint = document.getElementById("saveHint");
 
 let presetPairs = [];
 let selectedPreset = null;
+let currentBytes = null;
+let currentBaseName = null;
 
 const CHECK_SVG = `<svg class="check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>`;
 
@@ -78,6 +80,7 @@ function populatePresets(pairs) {
     row.addEventListener("click", () => {
       selectPreset(name);
       closeSheet();
+      if (currentBytes) runCurrentPhoto();
     });
     presetList.appendChild(row);
   }
@@ -135,6 +138,7 @@ presetList.addEventListener("keydown", (event) => {
       event.preventDefault();
       selectPreset(current.dataset.name);
       closeSheet();
+      if (currentBytes) runCurrentPhoto();
     }
   }
 });
@@ -152,15 +156,8 @@ const pyodideReady = (async () => {
   }
 })();
 
-fileInput.addEventListener("change", async () => {
-  const file = fileInput.files[0];
-  if (!file) return;
-
-  downloadLink.style.display = "none";
-  saveHint.style.display = "none";
-  previewFrame.style.display = "none";
-  fileLabelText.textContent = file.name;
-  setState("loading", "Warming up the engine (first time only)...");
+async function runCurrentPhoto() {
+  if (!currentBytes || !selectedPreset) return;
 
   let pyodide;
   try {
@@ -171,9 +168,7 @@ fileInput.addEventListener("change", async () => {
 
   setState("processing", "Developing the photo...");
   try {
-    const buf = new Uint8Array(await file.arrayBuffer());
-    const preset = selectedPreset;
-    let result = pyodide.globals.get("process")(buf, preset);
+    let result = pyodide.globals.get("process")(currentBytes, selectedPreset);
     if (result && typeof result.toJs === "function") result = result.toJs();
 
     const blob = new Blob([result], { type: "image/jpeg" });
@@ -182,9 +177,8 @@ fileInput.addEventListener("change", async () => {
     preview.src = url;
     previewFrame.style.display = "block";
 
-    const base = file.name.replace(/\.[^.]+$/, "");
     downloadLink.href = url;
-    downloadLink.download = `${base}_${preset}.jpg`;
+    downloadLink.download = `${currentBaseName}_${selectedPreset}.jpg`;
     downloadLink.style.display = "block";
     saveHint.style.display = "block";
 
@@ -192,6 +186,25 @@ fileInput.addEventListener("change", async () => {
   } catch (err) {
     setState("error", "Couldn't process that photo: " + err);
   }
+}
+
+fileInput.addEventListener("change", async () => {
+  const file = fileInput.files[0];
+  if (!file) return;
+
+  downloadLink.style.display = "none";
+  saveHint.style.display = "none";
+  previewFrame.style.display = "none";
+  fileLabelText.textContent = file.name;
+  currentBaseName = file.name.replace(/\.[^.]+$/, "");
+  setState("loading", "Warming up the engine (first time only)...");
+
+  currentBytes = new Uint8Array(await file.arrayBuffer());
+  // Clearing the input lets the browser fire "change" again even if the
+  // user re-picks this exact same file next time.
+  fileInput.value = "";
+
+  await runCurrentPhoto();
 });
 
 if ("serviceWorker" in navigator) {
