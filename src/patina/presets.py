@@ -219,4 +219,24 @@ PRESETS: Dict[str, Dict[str, Any]] = {
         "saturation": 1.75,
         "bloom": {"threshold": 150, "radius_ratio": 0.045, "strength": 0.60},
     },
+    "dark_fantasy": {
+        "description": "Moody cinematic Lightroom grade: deep blue-violet cast, muted "
+                       "warm tones, soft painterly detail, coarse grain.",
+        # Recipe (Lightroom): Temp 4550K/Tint +20 (cool, slightly magenta WB);
+        # Exposure -0.90/Contrast +20/Highlights -8/Shadows +24; Color Grading
+        # pushes blue (hue ~240) into shadows, midtones, and highlights alike;
+        # Color Mix pulls saturation out of red/orange/yellow/green while
+        # lifting cyan; Texture -30/Clarity -30/Dehaze -10; Grain 49/Size
+        # 42/Roughness 56. No per-tonal-range grading or per-hue mixer here,
+        # so the blue push rides on the channel gains and the warm-hue
+        # desaturation rides on the global saturation instead.
+        "reduce_scale": 0.82,
+        "color": {"r_mult": 0.85, "g_mult": 0.85, "b_mult": 1.25,
+                  "brightness": 0.85, "contrast": 1.28},
+        "saturation": 0.95,
+        "bloom": {"threshold": 200, "radius_ratio": 0.02, "strength": 0.15},
+        "fade": {"black": 26, "white": 240},
+        "grain_sigma": 12,
+        "grain_mono": True,
+    },
 }

@@ -15,7 +15,7 @@ def test_shipping_presets():
         "flash_night", "camcorder_warm", "y2k_camcorder",
         "disposable_flash", "digicam_2000s", "vhs_tape",
         "cctv", "lomo_xpro", "instant_film", "blurry_aesthetic",
-        "cyberpunk", "low_shine", "attack_on_titan",
+        "cyberpunk", "low_shine", "attack_on_titan", "dark_fantasy",
     }
 
 
@@ -73,3 +73,5 @@ def test_signature_steps():
     assert "sharpen" not in PRESETS["blurry_aesthetic"]
     assert PRESETS["attack_on_titan"]["saturation"] >= 1.5  # vivid sky, not nostalgic
     assert "grain_sigma" not in PRESETS["attack_on_titan"]  # clean digital edit, no tape/film wear
+    assert PRESETS["dark_fantasy"]["saturation"] < 1.0  # muted warm tones, not vivid
+    assert PRESETS["dark_fantasy"]["color"]["b_mult"] > PRESETS["dark_fantasy"]["color"]["r_mult"]  # blue-violet push
