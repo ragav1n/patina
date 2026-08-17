@@ -21,12 +21,25 @@ let presetPairs = [];
 let selectedPreset = null;
 let currentBytes = null;
 let currentBaseName = null;
+let previewUrl = null;
+let sheetHideTimer = null;
 
 const CHECK_SVG = `<svg class="check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>`;
 
 function setState(state, message) {
   document.body.dataset.state = state;
   if (message) statusEl.textContent = message;
+}
+
+// pyodide.globals.get("process")(...) runs Python synchronously and blocks
+// the main thread for the whole image, so anything the user should see
+// (the sheet closing, the "Developing..." status) has to actually reach the
+// screen before that call starts. Awaiting an already-resolved promise only
+// drains the microtask queue, it does not give the browser a paint, so we
+// explicitly wait for the next animation frame (plus a tick after it, to be
+// sure that frame was actually presented) first.
+function nextPaint() {
+  return new Promise((resolve) => requestAnimationFrame(() => setTimeout(resolve, 0)));
 }
 
 const BRIDGE_SRC = `
@@ -79,7 +92,7 @@ function populatePresets(pairs) {
     `;
     row.addEventListener("click", () => {
       selectPreset(name);
-      closeSheet();
+      closeSheet({ instant: !!currentBytes });
       if (currentBytes) runCurrentPhoto();
     });
     presetList.appendChild(row);
@@ -102,6 +115,7 @@ function selectPreset(name) {
 }
 
 function openSheet() {
+  if (sheetHideTimer) { clearTimeout(sheetHideTimer); sheetHideTimer = null; }
   presetSheet.hidden = false;
   requestAnimationFrame(() => presetSheet.classList.add("open"));
   presetTrigger.setAttribute("aria-expanded", "true");
@@ -109,11 +123,18 @@ function openSheet() {
   (selectedRow || presetList).focus();
 }
 
-function closeSheet() {
+function closeSheet({ instant = false } = {}) {
   presetSheet.classList.remove("open");
   presetTrigger.setAttribute("aria-expanded", "false");
   presetTrigger.focus();
-  setTimeout(() => { presetSheet.hidden = true; }, 250);
+  if (sheetHideTimer) { clearTimeout(sheetHideTimer); sheetHideTimer = null; }
+  if (instant) {
+    // About to block the main thread reprocessing a photo: skip the slide
+    // animation entirely so it doesn't freeze half-closed for that whole time.
+    presetSheet.hidden = true;
+  } else {
+    sheetHideTimer = setTimeout(() => { presetSheet.hidden = true; }, 250);
+  }
 }
 
 presetTrigger.addEventListener("click", openSheet);
@@ -137,7 +158,7 @@ presetList.addEventListener("keydown", (event) => {
     if (current) {
       event.preventDefault();
       selectPreset(current.dataset.name);
-      closeSheet();
+      closeSheet({ instant: !!currentBytes });
       if (currentBytes) runCurrentPhoto();
     }
   }
@@ -167,12 +188,15 @@ async function runCurrentPhoto() {
   }
 
   setState("processing", "Developing the photo...");
+  await nextPaint();
   try {
     let result = pyodide.globals.get("process")(currentBytes, selectedPreset);
     if (result && typeof result.toJs === "function") result = result.toJs();
 
     const blob = new Blob([result], { type: "image/jpeg" });
     const url = URL.createObjectURL(blob);
+    if (previewUrl) URL.revokeObjectURL(previewUrl);
+    previewUrl = url;
 
     preview.src = url;
     previewFrame.style.display = "block";
