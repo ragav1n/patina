@@ -2,12 +2,13 @@
 
 A small CLI tool I use to make my photos and videos look like they came off an old digicam or camcorder. Everything runs on your own machine: no uploads, no accounts, nothing phones home.
 
-Seventeen looks are built in:
+Eighteen looks are built in:
 
 | Preset | What you get |
 |---|---|
 | `flash_night` | harsh flash photo at night: cool blue cast, bright center, near-black corners, heavy grain |
 | `blue_hour` | Instagram blue-hour edit: any photo pushed into a deep saturated blue-cyan cast with glowing highlights |
+| `dreamcore` | hazy pastel dreamcore edit: faded cyan-blue cast, milky lifted blacks and muted whites, soft hazy detail, coarse grain |
 | `cyberpunk` | neon cyberpunk night: cool base pushed hard to magenta-pink, punchy crisp contrast, glowing highlights, dark corners |
 | `low_shine` | dark moody flash: desaturated cool tones, deep contrast, a bright glowing subject against near-black surroundings |
 | `attack_on_titan` | viral anime-sky edit: rich teal-blue sky, blown-out glowing clouds, punchy contrast and saturation |

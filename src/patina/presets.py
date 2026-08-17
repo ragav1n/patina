@@ -327,4 +327,35 @@ PRESETS: Dict[str, Dict[str, Any]] = {
         "bloom": {"threshold": 205, "radius_ratio": 0.02, "strength": 0.30},
         "fade": {"black": 14, "white": 245},
     },
+    "dreamcore": {
+        "description": "Hazy pastel dreamcore Lightroom recipe: faded cyan-blue cast "
+                       "over milky lifted blacks and muted whites, soft hazy detail, "
+                       "coarse grain.",
+        # Recipe (Lightroom): Temp -52/Tint -11 (cool, faint green); Exposure
+        # -0.86/Contrast +17/Highlights -7/Shadows +21/Whites -86/Blacks +58 —
+        # a deep flat tone curve, easily the strongest whites-pull of any recipe
+        # here, giving muted highlights and milky lifted blacks; Vibrance +24/
+        # Saturation +9; Texture -26/Clarity -26/Dehaze -9 (soft and hazy);
+        # Vignette -16/Midpoint 26/Roundness +55; Color Grading -> Shadows hue
+        # ~325 at high sat (pink-magenta), Midtones hue ~180 (cyan), Highlights
+        # hue ~215 (blue), Global hue ~215 at lower sat (blue); Grain 42/Size
+        # 42/Roughness 56 (near-identical to dark_fantasy's grain, so grain_sigma
+        # is calibrated off that same 12). No per-tonal-range grading here, so
+        # the shadows' pink-magenta pull — the opposite direction from the
+        # cyan/blue pushed into midtones, highlights, and global alike — can't
+        # ride on one flat channel gain; the majority cyan-blue direction wins,
+        # with red left less suppressed than a pure blue-violet grade (c.f.
+        # dark_fantasy) so some magenta/warmth stays reachable in the shadows.
+        # The whites/blacks curve rides on fade, and the clarity/dehaze softness
+        # rides on reduce_scale plus a faint bloom.
+        "reduce_scale": 0.85,
+        "color": {"r_mult": 0.90, "g_mult": 1.03, "b_mult": 1.25,
+                  "brightness": 0.94, "contrast": 1.15},
+        "saturation": 1.15,
+        "vignette_strength": 0.20,
+        "bloom": {"threshold": 200, "radius_ratio": 0.025, "strength": 0.18},
+        "fade": {"black": 50, "white": 195},
+        "grain_sigma": 11,
+        "grain_mono": True,
+    },
 }

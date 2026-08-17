@@ -16,7 +16,7 @@ def test_shipping_presets():
         "disposable_flash", "digicam_2000s", "vhs_tape",
         "cctv", "lomo_xpro", "instant_film", "blurry_aesthetic",
         "cyberpunk", "low_shine", "attack_on_titan", "dark_fantasy",
-        "fujifilm", "matrix", "blue_hour",
+        "fujifilm", "matrix", "blue_hour", "dreamcore",
     }
 
 
@@ -83,3 +83,8 @@ def test_signature_steps():
     assert (PRESETS["blue_hour"]["color"]["b_mult"]
             > PRESETS["blue_hour"]["color"]["g_mult"]
             > PRESETS["blue_hour"]["color"]["r_mult"])  # cyan-blue lean, not violet
+    assert PRESETS["dreamcore"]["fade"]["black"] > PRESETS["dark_fantasy"]["fade"]["black"]  # deepest whites-pull of any recipe
+    assert (PRESETS["dreamcore"]["color"]["b_mult"]
+            > PRESETS["dreamcore"]["color"]["g_mult"]
+            > PRESETS["dreamcore"]["color"]["r_mult"])  # cyan-blue lean, red left reachable for the shadow magenta
+    assert "grain_sigma" in PRESETS["dreamcore"]  # coarse grain, not a clean digital edit
