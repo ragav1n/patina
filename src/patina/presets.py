@@ -220,8 +220,9 @@ PRESETS: Dict[str, Dict[str, Any]] = {
         "bloom": {"threshold": 150, "radius_ratio": 0.045, "strength": 0.60},
     },
     "dark_fantasy": {
-        "description": "Moody cinematic Lightroom grade: deep blue-violet cast, muted "
-                       "warm tones, soft painterly detail, coarse grain.",
+        "description": "Moody cinematic Lightroom grade: deep blue-violet sky and "
+                       "foliage, glowing warm accents on lit subjects, soft painterly "
+                       "detail, coarse grain.",
         # Recipe (Lightroom): Temp 4550K/Tint +20 (cool, slightly magenta WB);
         # Exposure -0.90/Contrast +20/Highlights -8/Shadows +24; Color Grading
         # pushes blue (hue ~240) into shadows, midtones, and highlights alike;
@@ -230,19 +231,27 @@ PRESETS: Dict[str, Dict[str, Any]] = {
         # 42/Roughness 56. No per-tonal-range grading or per-hue mixer here,
         # so the blue push rides on the channel gains and the warm-hue
         # desaturation rides on the global saturation instead.
+        # Retuned against 4 real "after" reference photos (silhouette-at-dusk,
+        # cornfield, house-at-dusk, wildflower field): the sky/water/foliage
+        # read as rich saturated blue-violet while sunlit surfaces (a house
+        # facade, a backlit rim, a pine tree) stay warm pink/cream/rust rather
+        # than getting swallowed into the same blue — so the blue push was
+        # eased back (b_mult 1.25->1.20, r/g 0.85->0.87/0.88) to leave more of
+        # that warmth on lit surfaces, and saturation raised out of "muted"
+        # territory (0.95->1.08) since the blues in the refs are vivid, not
+        # pastel. Bloom nudged up for the glowing backlit-sun/water-glint look.
         "reduce_scale": 0.82,
-        "color": {"r_mult": 0.85, "g_mult": 0.85, "b_mult": 1.25,
+        "color": {"r_mult": 0.88, "g_mult": 0.87, "b_mult": 1.20,
                   "brightness": 0.85, "contrast": 1.28},
-        "saturation": 0.95,
-        "bloom": {"threshold": 200, "radius_ratio": 0.02, "strength": 0.15},
+        "saturation": 1.08,
+        "bloom": {"threshold": 195, "radius_ratio": 0.025, "strength": 0.20},
         "fade": {"black": 26, "white": 240},
         "grain_sigma": 12,
         "grain_mono": True,
     },
     "fujifilm": {
-        "description": "Warm Fujifilm-style Lightroom recipe: punchy saturated color, "
-                       "warm yellow-orange highlights and yellow-green shadows, crisp "
-                       "sharpening, fine grain.",
+        "description": "Warm Fujifilm-style Lightroom recipe: punchy saturated color "
+                       "mounted on a white print border, crisp sharpening, fine grain.",
         # Recipe (Lightroom): WB Temp 6600K/Tint +7; Vibrance +25/Saturation +40;
         # Color Grading -> Highlights hue 48/sat 32, Shadows hue 66/sat 30, both
         # Blending 100 (warm yellow-orange highlights, yellow-green shadows);
@@ -252,11 +261,20 @@ PRESETS: Dict[str, Dict[str, Any]] = {
         # grading or per-hue mixer here, so the warm cast rides on the channel
         # gains and the vibrance/saturation boost rides on the global
         # saturation instead.
+        # Retuned against 3 real "after" reference photos (a harbor lighthouse,
+        # a moored boat, sodas on a shelf): all three are mounted on a uniform
+        # white print border, which the recipe screenshots never showed, so
+        # `instant_frame` was added with equal side/bottom ratios (unlike
+        # `instant_film`'s thick-bottom Polaroid look, this one is even on all
+        # sides). The blue cut was also eased (b_mult 0.88->0.93) — the refs'
+        # sky and water keep a visible teal-blue undertone rather than going
+        # fully warm, the warmth mostly shows up in whites/wood/highlights.
         "sharpen": {"radius": 1.0, "amount": 0.4},
-        "color": {"r_mult": 1.06, "g_mult": 1.04, "b_mult": 0.88,
-                  "brightness": 1.03, "contrast": 1.10},
-        "saturation": 1.40,
+        "color": {"r_mult": 1.05, "g_mult": 1.04, "b_mult": 0.93,
+                  "brightness": 1.03, "contrast": 1.12},
+        "saturation": 1.30,
         "grain_sigma": 7,
         "grain_mono": True,
+        "instant_frame": {"thickness_ratio": 0.045, "bottom_ratio": 0.045},
     },
 }

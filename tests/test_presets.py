@@ -74,7 +74,9 @@ def test_signature_steps():
     assert "sharpen" not in PRESETS["blurry_aesthetic"]
     assert PRESETS["attack_on_titan"]["saturation"] >= 1.5  # vivid sky, not nostalgic
     assert "grain_sigma" not in PRESETS["attack_on_titan"]  # clean digital edit, no tape/film wear
-    assert PRESETS["dark_fantasy"]["saturation"] < 1.0  # muted warm tones, not vivid
+    assert PRESETS["dark_fantasy"]["saturation"] >= 1.0  # vivid blue-violet, not pastel-muted
     assert PRESETS["dark_fantasy"]["color"]["b_mult"] > PRESETS["dark_fantasy"]["color"]["r_mult"]  # blue-violet push
-    assert PRESETS["fujifilm"]["saturation"] >= 1.3  # punchy vibrance + saturation push
-    assert PRESETS["fujifilm"]["color"]["r_mult"] > PRESETS["fujifilm"]["color"]["b_mult"]  # warm yellow-orange cast
+    assert PRESETS["fujifilm"]["saturation"] >= 1.2  # punchy vibrance + saturation push
+    assert PRESETS["fujifilm"]["color"]["r_mult"] > PRESETS["fujifilm"]["color"]["b_mult"]  # warm cast
+    assert "instant_frame" in PRESETS["fujifilm"]  # mounted on a white print border
+    assert PRESETS["fujifilm"]["instant_frame"]["thickness_ratio"] == PRESETS["fujifilm"]["instant_frame"]["bottom_ratio"]  # even border, not a Polaroid bottom
