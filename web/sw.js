@@ -1,14 +1,51 @@
-// Cache-first, cache-as-you-go: every same-origin GET the app makes (the
-// page shell, the Pyodide runtime, the numpy/Pillow/pillow-heif packages,
-// the patina wheel) gets cached the first time it's fetched. After that
-// first successful load over Wi-Fi, everything the app needs is already in
-// the cache, so it keeps working with no network at all.
+// Two reasons this worker precaches an explicit file list on install instead
+// of relying only on "cache whatever gets fetched":
+//
+// 1. The page shell (index.html, app.js, this file, the classic
+//    <script src="vendor/pyodide/pyodide.js"> tag) is fetched as part of the
+//    very first navigation, before registration (which only happens on the
+//    page's "load" event) has even started. A service worker can't
+//    retroactively intercept requests that happened before it existed.
+//
+// 2. Pyodide resolves its own runtime files and any package named by string
+//    (numpy, Pillow, pillow-heif, and their transitive deps cffi/pycparser)
+//    against its lock file using its own internal loader, not the page's
+//    fetch(). Verified by testing: none of those ever show up in Cache
+//    Storage even after the page reports "Ready" and idling well past that,
+//    while a package loaded by direct URL (the patina wheel) is caught fine.
+//    So the runtime fetch handler below genuinely cannot see requests for
+//    anything in this list; the only way to get them offline-ready is to
+//    fetch them ourselves.
+//
+// If the vendored Pyodide/numpy/Pillow/pillow-heif versions are ever
+// upgraded, this list needs updating to match the new filenames.
 //
 // Bump CACHE_NAME when shipping a real update so old assets don't stick
 // around forever once you're back online.
-const CACHE_NAME = "patina-v1";
+const CACHE_NAME = "patina-v2";
+const PRECACHE_URLS = [
+  "./",
+  "./index.html",
+  "./app.js",
+  "./manifest.webmanifest",
+  "./icons/icon-192.png",
+  "./icons/icon-512.png",
+  "./pkg/manifest.json",
+  "./vendor/pyodide/pyodide.js",
+  "./vendor/pyodide/pyodide.mjs",
+  "./vendor/pyodide/pyodide.asm.mjs",
+  "./vendor/pyodide/pyodide.asm.wasm",
+  "./vendor/pyodide/pyodide-lock.json",
+  "./vendor/pyodide/python_stdlib.zip",
+  "./vendor/pyodide/numpy-2.4.6-cp314-cp314-pyemscripten_2026_0_wasm32.whl",
+  "./vendor/pyodide/pillow-12.2.0-cp314-cp314-pyemscripten_2026_0_wasm32.whl",
+  "./vendor/pyodide/pillow_heif-1.3.0-cp314-cp314-pyemscripten_2026_0_wasm32.whl",
+  "./vendor/pyodide/cffi-2.0.0-cp314-cp314-pyemscripten_2026_0_wasm32.whl",
+  "./vendor/pyodide/pycparser-3.0-py3-none-any.whl",
+];
 
-self.addEventListener("install", () => {
+self.addEventListener("install", (event) => {
+  event.waitUntil(caches.open(CACHE_NAME).then((cache) => cache.addAll(PRECACHE_URLS)));
   self.skipWaiting();
 });
 
@@ -31,7 +68,12 @@ self.addEventListener("fetch", (event) => {
       if (cached) return cached;
       try {
         const response = await fetch(req);
-        if (response.ok) cache.put(req, response.clone());
+        // Large assets (the wasm runtime, the numpy/Pillow wheels) can take
+        // real time to write into Cache Storage. Without waitUntil, the
+        // browser is free to suspend this worker the instant the response
+        // above is handed back to the page, silently dropping the write
+        // before it finishes, so the asset never actually ends up cached.
+        if (response.ok) event.waitUntil(cache.put(req, response.clone()));
         return response;
       } catch (err) {
         if (cached) return cached;
