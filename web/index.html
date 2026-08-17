@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>patina</title>
+
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="patina">
+<meta name="theme-color" content="#1e1a16">
+
+<style>
+  /* ---- tokens -------------------------------------------------------- */
+  :root {
+    color-scheme: dark;
+    --bg: #1e1a16;                 /* matches the flat corners baked into icons/icon-*.png */
+    --panel: #262019;
+    --panel-border: rgba(255,255,255,0.08);
+    --ink: #f3ede2;
+    --muted: #9c9080;
+    --accent: #4f8d7a;             /* verdigris, the one locked accent */
+    --accent-ink: #eafff6;
+    --copper: #c17a42;             /* used sparingly: glow + loading state only */
+    --danger: #c1573c;
+    --radius-panel: 18px;          /* rectangular inputs / panels */
+    --radius-control: 14px;
+    --radius-pill: 999px;          /* committed actions only */
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    min-height: 100dvh;
+    font-family: -apple-system, "SF Pro Text", system-ui, sans-serif;
+    background: var(--bg);
+    color: var(--ink);
+    position: relative;
+  }
+
+  /* Fixed, static grain texture. Cheap: it's one pseudo-element, never
+     animated, never on a scrolling container. */
+  body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+    opacity: 0.05;
+    mix-blend-mode: overlay;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");
+  }
+
+  main {
+    position: relative;
+    z-index: 1;
+    max-width: 460px;
+    margin: 0 auto;
+    padding: max(28px, env(safe-area-inset-top)) 20px 48px;
+  }
+
+  /* ---- header ---------------------------------------------------------- */
+  .brand {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-bottom: 28px;
+  }
+  .brand-mark {
+    width: 46px;
+    height: 46px;
+    border-radius: 12px;
+    flex-shrink: 0;
+    box-shadow: 0 6px 18px rgba(193,122,66,0.25);
+  }
+  h1 {
+    font-size: 1.5rem;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    margin: 0;
+  }
+  .tag {
+    color: var(--muted);
+    font-size: 0.84rem;
+    margin: 2px 0 0;
+    line-height: 1.4;
+  }
+
+  /* ---- panel ------------------------------------------------------------ */
+  .panel {
+    background: var(--panel);
+    border: 1px solid var(--panel-border);
+    border-radius: var(--radius-panel);
+    padding: 18px;
+    margin-bottom: 18px;
+  }
+
+  input[type=file] { position: absolute; width: 1px; height: 1px; opacity: 0; overflow: hidden; }
+
+  .dropzone {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 16px 18px;
+    border-radius: var(--radius-control);
+    border: 1px dashed rgba(255,255,255,0.18);
+    background: rgba(255,255,255,0.02);
+    cursor: pointer;
+    transition: transform 0.15s cubic-bezier(0.16,1,0.3,1), border-color 0.15s ease, background 0.15s ease;
+  }
+  .dropzone:active { transform: scale(0.98); }
+  .dropzone:hover { border-color: var(--accent); background: rgba(79,141,122,0.08); }
+  .dropzone-icon {
+    width: 34px;
+    height: 34px;
+    flex-shrink: 0;
+    border-radius: 9px;
+    background: rgba(193,122,66,0.16);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--copper);
+  }
+  .dropzone-icon svg { width: 18px; height: 18px; }
+  #fileLabelText {
+    font-size: 0.95rem;
+    font-weight: 500;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .field { margin-top: 16px; }
+  .field > label {
+    display: block;
+    font-size: 0.76rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--muted);
+    margin-bottom: 8px;
+  }
+
+  .select-shell {
+    position: relative;
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 13px 14px;
+    border-radius: var(--radius-control);
+    border: 1px solid rgba(255,255,255,0.12);
+    background: rgba(255,255,255,0.02);
+    color: var(--ink);
+    font-size: 0.95rem;
+    text-transform: capitalize;
+    font-family: inherit;
+    text-align: left;
+    cursor: pointer;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease, transform 0.15s cubic-bezier(0.16,1,0.3,1);
+  }
+  .select-shell:active { transform: scale(0.99); }
+  .select-shell:disabled { color: var(--muted); cursor: default; }
+  .select-shell:focus-visible {
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(79,141,122,0.25);
+  }
+  .select-shell svg {
+    flex-shrink: 0;
+    width: 14px;
+    height: 14px;
+    color: var(--muted);
+    pointer-events: none;
+    transition: transform 0.2s ease;
+  }
+  .select-shell[aria-expanded="true"] svg { transform: rotate(180deg); }
+
+  /* ---- preset picker: a bottom sheet, not the OS select popup, so it can
+     actually be styled and show each look's description while browsing */
+  .sheet {
+    position: fixed;
+    inset: 0;
+    z-index: 10;
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+  }
+  .sheet[hidden] { display: none; }
+  .sheet-backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(10,8,6,0.55);
+    opacity: 0;
+    transition: opacity 0.2s ease;
+  }
+  .sheet.open .sheet-backdrop { opacity: 1; }
+  .sheet-panel {
+    position: relative;
+    width: 100%;
+    max-width: 460px;
+    max-height: 72vh;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    background: var(--panel);
+    border: 1px solid var(--panel-border);
+    border-bottom: none;
+    border-radius: 22px 22px 0 0;
+    padding: 8px 10px calc(10px + env(safe-area-inset-bottom));
+    transform: translateY(100%);
+    transition: transform 0.25s cubic-bezier(0.16,1,0.3,1);
+  }
+  .sheet.open .sheet-panel { transform: translateY(0); }
+  .sheet-grip {
+    width: 36px;
+    height: 4px;
+    border-radius: var(--radius-pill);
+    background: rgba(255,255,255,0.18);
+    margin: 6px auto 10px;
+  }
+  .preset-option {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 12px 12px;
+    border-radius: var(--radius-control);
+    cursor: pointer;
+  }
+  .preset-option:hover { background: rgba(255,255,255,0.04); }
+  .preset-option:active { background: rgba(79,141,122,0.12); }
+  .preset-option[aria-selected="true"] { background: rgba(79,141,122,0.14); }
+  .preset-option-text { min-width: 0; }
+  .preset-option-name {
+    display: block;
+    font-weight: 600;
+    font-size: 0.92rem;
+    text-transform: capitalize;
+  }
+  .preset-option-desc {
+    display: block;
+    font-size: 0.78rem;
+    color: var(--muted);
+    margin-top: 2px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .preset-option .check {
+    flex-shrink: 0;
+    width: 18px;
+    height: 18px;
+    color: var(--accent);
+    margin-top: 2px;
+    visibility: hidden;
+  }
+  .preset-option[aria-selected="true"] .check { visibility: visible; }
+
+  .preset-desc {
+    font-size: 0.8rem;
+    color: var(--muted);
+    line-height: 1.45;
+    margin: 10px 2px 0;
+    min-height: 2.6em;
+  }
+
+  /* ---- status / progress ------------------------------------------------ */
+  .status-row { margin-bottom: 18px; }
+  #status {
+    font-size: 0.85rem;
+    margin: 0 0 8px;
+    color: var(--muted);
+  }
+  body[data-state="loading"] #status,
+  body[data-state="processing"] #status { color: var(--copper); }
+  body[data-state="ready"] #status { color: var(--accent); }
+  body[data-state="error"] #status { color: var(--danger); }
+
+  .progress {
+    height: 3px;
+    border-radius: var(--radius-pill);
+    background: rgba(255,255,255,0.08);
+    overflow: hidden;
+    display: none;
+  }
+  body[data-state="loading"] .progress,
+  body[data-state="processing"] .progress { display: block; }
+  .progress::after {
+    content: "";
+    display: block;
+    height: 100%;
+    width: 40%;
+    border-radius: inherit;
+    background: linear-gradient(90deg, transparent, var(--copper), transparent);
+    animation: sweep 1.3s ease-in-out infinite;
+  }
+  @keyframes sweep {
+    0% { transform: translateX(-120%); }
+    100% { transform: translateX(280%); }
+  }
+
+  /* ---- result: styled like an instant print, deliberately breaks the
+     panel radius scale so it reads as a physical photo, not app chrome */
+  #previewFrame {
+    display: none;
+    background: #ece6da;
+    padding: 10px 10px 34px;
+    border-radius: 4px;
+    margin: 4px 0 20px;
+    transform: rotate(-0.6deg);
+    box-shadow: 0 16px 34px rgba(0,0,0,0.4), 0 2px 6px rgba(0,0,0,0.3);
+  }
+  #preview {
+    display: block;
+    width: 100%;
+    border-radius: 2px;
+  }
+
+  .save-btn {
+    display: block;
+    text-align: center;
+    padding: 15px;
+    border-radius: var(--radius-pill);
+    background: var(--accent);
+    color: var(--accent-ink);
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 0.95rem;
+    transition: transform 0.15s cubic-bezier(0.16,1,0.3,1);
+  }
+  .save-btn:active { transform: scale(0.97); }
+
+  .hint {
+    font-size: 0.78rem;
+    color: var(--muted);
+    text-align: center;
+    margin: 12px 0 0;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .dropzone, .select-shell, .save-btn { transition: none; }
+    .progress::after { animation: none; }
+    .sheet-backdrop, .sheet-panel { transition: none; }
+  }
+</style>
+</head>
+<body data-state="loading">
+
+<main>
+  <header class="brand">
+    <img src="icons/icon-192.png" alt="" class="brand-mark" width="46" height="46">
+    <div>
+      <h1>patina</h1>
+      <p class="tag">Offline digicam &amp; camcorder looks, right on this phone.</p>
+    </div>
+  </header>
+
+  <div class="panel">
+    <label for="fileInput" class="dropzone">
+      <span class="dropzone-icon" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M4 8.5A1.5 1.5 0 0 1 5.5 7h2.2l1-1.6A1.5 1.5 0 0 1 10 4.6h4a1.5 1.5 0 0 1 1.3.8L16.3 7h2.2A1.5 1.5 0 0 1 20 8.5v9A1.5 1.5 0 0 1 18.5 19h-13A1.5 1.5 0 0 1 4 17.5z"/>
+          <circle cx="12" cy="13" r="3.4"/>
+        </svg>
+      </span>
+      <span id="fileLabelText">Choose a photo</span>
+    </label>
+    <input type="file" id="fileInput" accept="image/*">
+
+    <div class="field">
+      <label id="presetLabel">Look</label>
+      <button type="button" class="select-shell" id="presetTrigger"
+              aria-haspopup="listbox" aria-expanded="false" aria-labelledby="presetLabel presetTriggerText"
+              disabled>
+        <span id="presetTriggerText">Loading looks...</span>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M6 9l6 6 6-6"/>
+        </svg>
+      </button>
+      <p class="preset-desc" id="presetDesc"></p>
+    </div>
+  </div>
+
+  <div class="sheet" id="presetSheet" hidden>
+    <div class="sheet-backdrop" id="presetSheetBackdrop"></div>
+    <div class="sheet-panel" role="listbox" id="presetList" aria-labelledby="presetLabel" tabindex="-1">
+      <div class="sheet-grip" aria-hidden="true"></div>
+    </div>
+  </div>
+
+  <div class="status-row">
+    <p id="status">Warming up the engine...</p>
+    <div class="progress" aria-hidden="true"></div>
+  </div>
+
+  <div id="previewFrame">
+    <img id="preview" alt="Processed preview">
+  </div>
+
+  <a id="downloadLink" class="save-btn" download style="display:none;">Save photo</a>
+  <p class="hint" id="saveHint" style="display:none;">
+    Tip: long-press the photo above and choose "Add to Photos", or use Save.
+  </p>
+</main>
+
+<script src="vendor/pyodide/pyodide.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
