@@ -21,8 +21,20 @@ let presetPairs = [];
 let selectedPreset = null;
 let currentBytes = null;
 let currentBaseName = null;
-let previewUrl = null;
 let sheetHideTimer = null;
+
+// iOS Safari's long-press "Save to Photos" on an <img> is unreliable with
+// blob: URLs — the OS-level save sheet runs out of the page's process and
+// can't always resolve them, failing with "An error occurred". A data: URL
+// is a self-contained string with no such lifetime/process dependency.
+function blobToDataURL(blob) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = () => reject(reader.error);
+    reader.readAsDataURL(blob);
+  });
+}
 
 const CHECK_SVG = `<svg class="check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>`;
 
@@ -49,9 +61,20 @@ from pillow_heif import register_heif_opener
 register_heif_opener()
 from patina import render, presets
 
+# Real phone photos (12-48MP) run through several full-resolution numpy
+# float buffers per preset. WebAssembly linear memory only ever grows, it's
+# never returned to the OS between calls, so two full-res passes back to
+# back (e.g. switching presets) can blow past Safari's per-tab WASM memory
+# ceiling and crash the page. Downscaling first keeps memory bounded and
+# makes every pass fast; 2048px is already bigger than this phone-sized
+# preview/share flow ever needs.
+MAX_DIMENSION = 2048
+
 def process(data, preset_name):
     img = Image.open(io.BytesIO(bytes(data)))
     img = ImageOps.exif_transpose(img).convert("RGB")
+    if max(img.size) > MAX_DIMENSION:
+        img.thumbnail((MAX_DIMENSION, MAX_DIMENSION), Image.Resampling.LANCZOS)
     out = render.render_frame(img, presets.PRESETS[preset_name])
     buf = io.BytesIO()
     out.save(buf, format="JPEG", quality=92)
@@ -194,14 +217,12 @@ async function runCurrentPhoto() {
     if (result && typeof result.toJs === "function") result = result.toJs();
 
     const blob = new Blob([result], { type: "image/jpeg" });
-    const url = URL.createObjectURL(blob);
-    if (previewUrl) URL.revokeObjectURL(previewUrl);
-    previewUrl = url;
+    const dataUrl = await blobToDataURL(blob);
 
-    preview.src = url;
+    preview.src = dataUrl;
     previewFrame.style.display = "block";
 
-    downloadLink.href = url;
+    downloadLink.href = dataUrl;
     downloadLink.download = `${currentBaseName}_${selectedPreset}.jpg`;
     downloadLink.style.display = "block";
     saveHint.style.display = "block";

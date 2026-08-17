@@ -22,7 +22,7 @@
 //
 // Bump CACHE_NAME when shipping a real update so old assets don't stick
 // around forever once you're back online.
-const CACHE_NAME = "patina-v2";
+const CACHE_NAME = "patina-v3";
 const PRECACHE_URLS = [
   "./",
   "./index.html",
